@@ -50,14 +50,15 @@
 
         <div class="console-section">
             <div class="console-title">Super Nintendo (SNES)</div>
-            <!-- REVISA EL NOMBRE: Si tu archivo se llama "Zelda.smc" o "zelda.sfc", debes ponerlo EXACTAMENTE IGUAL -->
-            <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.sfc')">The Legend of Zelda</button>
+            <!-- CORRECCIÓN: Se usa la URL completa al archivo "raw" de GitHub para evitar errores de red. -->
+            <button class="game-btn" onclick="startGame('snes', 'https://raw.githubusercontent.com/AVS-PROJECTS33/EMUWEB/main/SNES/zelda.sfc')">The Legend of Zelda</button>
         </div>
 
         <div class="console-section">
             <div class="console-title" style="color:#2196f3;">Mega Drive (Genesis)</div>
-            <!-- Para añadir juegos de MegaDrive crea la carpeta y pon la ruta aquí -->
-            <button class="game-btn" onclick="startGame('segaMD', 'MEGADRIVE/sonic.md')">Sonic The Hedgehog</button>
+            <!-- NOTA: Para que este botón funcione, debes crear una carpeta "MEGADRIVE" en tu GitHub y subir la ROM del juego. -->
+            <!-- La URL debería ser: 'https://raw.githubusercontent.com/AVS-PROJECTS33/EMUWEB/main/MEGADRIVE/sonic.md' -->
+            <button class="game-btn" onclick="alert('Primero debes subir la ROM de Sonic a una carpeta llamada MEGADRIVE en tu GitHub.')">Sonic The Hedgehog (No añadido)</button>
         </div>
     </div>
 
@@ -87,4 +88,3 @@
     </script>
 </body>
 </html>
-
