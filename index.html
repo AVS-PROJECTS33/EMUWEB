@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Retro Web Emu</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            background-color: #111; color: white; font-family: sans-serif;
+            overflow: hidden;
+        }
+        /* Menú Principal */
+        #menu-screen {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; text-align: center; height: 100%; overflow-y: auto;
+        }
+        h1 { color: #ffeb3b; margin-bottom: 30px; font-size: 24px; }
+        .console-section { width: 100%; max-width: 400px; margin-bottom: 30px; }
+        .console-title { 
+            font-size: 18px; border-bottom: 2px solid #555; 
+            padding-bottom: 5px; margin-bottom: 15px; color: #4caf50; 
+            font-weight: bold;
+        }
+        .game-btn {
+            background: #333; border: 1px solid #555; color: white;
+            padding: 15px; margin-bottom: 10px; width: 100%; border-radius: 8px;
+            font-size: 16px; cursor: pointer; transition: background 0.2s;
+        }
+        .game-btn:active { background: #555; }
+
+        /* Contenedor del Juego */
+        #game-screen { display: none; width: 100%; height: 100%; position: relative;}
+        #game-container { width: 100%; height: 100%; }
+        
+        #btn-back {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: rgba(0,0,0,0.6); color: white; border: 1px solid white;
+            padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE MENÚ -->
+    <div id="menu-screen">
+        <h1>🎮 Mis Emuladores</h1>
+
+        <div class="console-section">
+            <div class="console-title">Super Nintendo (SNES)</div>
+            <!-- REVISA EL NOMBRE: Si tu archivo se llama "Zelda.smc" o "zelda.sfc", debes ponerlo EXACTAMENTE IGUAL -->
+            <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.sfc')">The Legend of Zelda</button>
+        </div>
+
+        <div class="console-section">
+            <div class="console-title" style="color:#2196f3;">Mega Drive (Genesis)</div>
+            <!-- Para añadir juegos de MegaDrive crea la carpeta y pon la ruta aquí -->
+            <button class="game-btn" onclick="startGame('segaMD', 'MEGADRIVE/sonic.md')">Sonic The Hedgehog</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE JUEGO -->
+    <div id="game-screen">
+        <button id="btn-back" onclick="location.reload()">◀ Volver al Menú</button>
+        <div id="game-container"></div>
+    </div>
+
+    <script>
+        function startGame(core, romUrl) {
+            // Ocultar menú y mostrar juego
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+
+            // Variables que necesita EmulatorJS
+            window.EJS_player = '#game-container';
+            window.EJS_core = core;
+            window.EJS_gameUrl = romUrl;
+            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+
+            // Inyectar el script del emulador dinámicamente para que inicie
+            var script = document.createElement('script');
+            script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
 
