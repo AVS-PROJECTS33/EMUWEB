@@ -87,7 +87,7 @@
         .game-btn:active { background: #555; }
 
         /* Contenedor del Juego */
-        #game-screen { display: none; width: 100%; height: 100%; position: relative;}
+        #game-screen { display: none; width: 100%; height: 100%; position: relative; }
         #game-container { width: 100%; height: 100%; }
 
         /* Menú de Slots de Guardado */
@@ -142,11 +142,13 @@
         <!-- Pestañas de Navegación -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchTab('snes', this)">🕹️ SNES</button>
+            <button class="tab-btn" onclick="switchTab('fav', this)">⭐ Favs</button>
             <button class="tab-btn" onclick="switchTab('md', this)">🌀 Mega Drive</button>
             <button class="tab-btn" onclick="switchTab('gba', this)">📱 Game Boy</button>
             <button class="tab-btn" onclick="switchTab('psx', this)">💿 PS1</button>
             <button class="tab-btn" onclick="switchTab('nes', this)">🕹️ NES</button>
             <button class="tab-btn" onclick="switchTab('ds', this)">🎮 NDS</button>
+            <button class="tab-btn" onclick="switchTab('n64', this)">🔱 N64</button>
             <button class="tab-btn" onclick="switchTab('local', this)">📁 Local</button>
         </div>
 
@@ -154,6 +156,11 @@
         <div id="tab-snes" class="console-section active">
             <div class="console-title" style="color:#4caf50;">Super Nintendo</div>
             <div id="snes-auto-list"></div>
+        </div>
+
+        <div id="tab-fav" class="console-section">
+            <div class="console-title" style="color:#ffeb3b;">Mis Favoritos</div>
+            <div id="fav-auto-list"></div>
         </div>
 
         <div id="tab-md" class="console-section">
@@ -181,9 +188,14 @@
             <div id="ds-auto-list"></div>
         </div>
 
+        <div id="tab-n64" class="console-section">
+            <div class="console-title" style="color:#ffcc00;">Nintendo 64</div>
+            <div id="n64-auto-list"></div>
+        </div>
+
         <div id="tab-local" class="console-section">
             <div class="console-title" style="color:#ff9800;">Carga Manual</div>
-            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.nes,.nds" multiple style="display: none;" onchange="loadLocalRoms(event)">
+            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.nes,.nds,.n64,.v64,.z64" multiple style="display: none;" onchange="loadLocalRoms(event)">
             <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
             <div id="local-roms-list"></div>
         </div>
@@ -209,12 +221,13 @@
         // Función para filtrar juegos en el buscador
         function filterGames() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            // Selecciona todos los botones de juego generados automáticamente en las listas
-            const gameButtons = document.querySelectorAll('[id$="-auto-list"] .game-btn');
+            // Selecciona todos los wrappers de juego y botones sueltos de Local
+            const items = document.querySelectorAll('.game-wrapper, #local-roms-list .game-btn');
             
-            gameButtons.forEach(btn => {
-                const gameName = btn.innerText.toLowerCase();
-                btn.style.display = gameName.includes(searchTerm) ? 'block' : 'none';
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                const isFlex = item.classList.contains('game-wrapper');
+                item.style.display = text.includes(searchTerm) ? (isFlex ? 'flex' : 'block') : 'none';
             });
         }
 
@@ -295,7 +308,29 @@
                             doc.head.appendChild(style);
                         }
 
-                        // 3. Traducir menú y arreglar el botón de salida
+                        // 3. Inyectar botones de Guardado personalizados en la barra inferior nativa
+                        const bar = doc.getElementById('bar') || doc.querySelector('.bar');
+                        if (bar && !doc.getElementById('custom-avs-saves')) {
+                            const btnContainer = doc.createElement('div');
+                            btnContainer.id = 'custom-avs-saves';
+                            btnContainer.style.cssText = 'display: inline-flex; gap: 10px; margin-left: 15px; align-items: center; z-index: 9999;';
+                            
+                            const btnSave = doc.createElement('button');
+                            btnSave.innerHTML = '💾 Guardar';
+                            btnSave.style.cssText = 'background: #1565c0; color: white; border: 1px solid #111; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
+                            btnSave.onclick = (e) => { e.preventDefault(); e.stopPropagation(); window.parent.openSlotMenu('save'); };
+
+                            const btnLoad = doc.createElement('button');
+                            btnLoad.innerHTML = '📂 Cargar';
+                            btnLoad.style.cssText = 'background: #2e7d32; color: white; border: 1px solid #111; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
+                            btnLoad.onclick = (e) => { e.preventDefault(); e.stopPropagation(); window.parent.openSlotMenu('load'); };
+
+                            btnContainer.appendChild(btnSave);
+                            btnContainer.appendChild(btnLoad);
+                            bar.appendChild(btnContainer);
+                        }
+
+                        // 4. Traducir menú y arreglar el botón de salida
                         const translations = {
                             'Save State': 'Guardar Partida',
                             'Load State': 'Cargar Partida',
@@ -446,6 +481,7 @@
             document.getElementById('psx-auto-list').innerHTML = '';
             document.getElementById('nes-auto-list').innerHTML = '';
             document.getElementById('ds-auto-list').innerHTML = '';
+            document.getElementById('n64-auto-list').innerHTML = '';
             document.getElementById('fav-auto-list').innerHTML = '';
 
             const favs = getFavorites();
@@ -463,6 +499,7 @@
                 else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) { core = 'psx'; containerId = 'psx-auto-list'; }
                 else if (nameLower.endsWith('.nes')) { core = 'nes'; containerId = 'nes-auto-list'; }
                 else if (nameLower.endsWith('.nds')) { core = 'nds'; containerId = 'ds-auto-list'; }
+                else if (nameLower.endsWith('.n64') || nameLower.endsWith('.v64') || nameLower.endsWith('.z64')) { core = 'n64'; containerId = 'n64-auto-list'; }
 
                 if (core && containerId) {
                     const isFav = favs.includes(fileName);
@@ -514,6 +551,7 @@
                 else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
                 else if (name.endsWith('.nes')) core = 'nes';
                 else if (name.endsWith('.nds')) core = 'nds';
+                else if (name.endsWith('.n64') || name.endsWith('.v64') || name.endsWith('.z64')) core = 'n64';
 
                 if (core) {
                     const btn = document.createElement('button');
