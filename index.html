@@ -144,7 +144,7 @@
             <button class="tab-btn active" onclick="switchTab('snes', this)">🕹️ SNES</button>
             <button class="tab-btn" onclick="switchTab('fav', this)">⭐ Favs</button>
             <button class="tab-btn" onclick="switchTab('md', this)">🌀 Mega Drive</button>
-            <button class="tab-btn" onclick="switchTab('gba', this)">📱 Game Boy</button>
+            <button class="tab-btn" onclick="switchTab('gba', this)">📱 GB / Advance</button>
             <button class="tab-btn" onclick="switchTab('psx', this)">💿 PS1</button>
             <button class="tab-btn" onclick="switchTab('nes', this)">🕹️ NES</button>
             <button class="tab-btn" onclick="switchTab('ds', this)">🎮 NDS</button>
@@ -169,7 +169,7 @@
         </div>
 
         <div id="tab-gba" class="console-section">
-            <div class="console-title" style="color:#9c27b0;">Game Boy (GBA/GBC/GB)</div>
+            <div class="console-title" style="color:#9c27b0;">Game Boy / Advance</div>
             <div id="gba-auto-list"></div>
         </div>
 
@@ -453,7 +453,8 @@
             btn.style.flex = '1';
             btn.innerText = '🎮 ' + displayName;
             
-            const fileUrl = `${R2_BASE_URL}/${encodeURI(fileName)}`;
+            // Utilizamos encodeURIComponent para que no fallen los juegos con &, +, # o corchetes en el nombre
+            const fileUrl = `${R2_BASE_URL}/${fileName.split('/').map(encodeURIComponent).join('/')}`;
             btn.onclick = () => startGame(core, fileUrl, fileName);
 
             // Botón de Favorito
