@@ -40,6 +40,10 @@
             margin: 0; padding: 0; width: 100vw; height: 100dvh; /* dvh corrige el scroll en móviles */
             background-color: #111; color: white; font-family: sans-serif;
             overflow: hidden;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://raw.githubusercontent.com/AVS-PROJECTS33/EMUWEB/main/Gemini_Generated_Image_6qtlzm6qtlzm6qtl.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
         /* Menú Principal */
         #menu-screen {
@@ -85,16 +89,35 @@
         /* Contenedor del Juego */
         #game-screen { display: none; width: 100%; height: 100%; position: relative;}
         #game-container { width: 100%; height: 100%; }
-        
-        #btn-back {
-            position: fixed; top: 15px; left: 15px; z-index: 9999;
-            background: rgba(0,0,0,0.4); color: #fff; border: 2px solid rgba(255,255,255,0.2);
-            width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px;
-            display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px); transition: all 0.3s; padding: 0;
+
+        /* Menú de Slots de Guardado */
+        #slot-menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 9999;
         }
-        #btn-back:hover {
-            background: rgba(220, 38, 38, 0.8); border-color: #f87171; transform: scale(1.1);
+        .slot-menu-content {
+            background: #1e1e1e; border: 1px solid #444; border-radius: 12px;
+            padding: 20px; width: 90%; max-width: 450px; text-align: center;
+        }
+        #slot-menu-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #ffeb3b; }
+        #slot-grid-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px; margin-bottom: 20px;
+        }
+        .slot-btn {
+            background: #2a2a2a; border: 1px solid #555; border-radius: 8px;
+            padding: 15px 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .slot-btn.empty { background: #222; border-color: #333; }
+        .slot-btn:active { transform: scale(0.95); background: #444; }
+        .slot-btn-title { font-weight: bold; color: white; font-size: 14px; }
+        .slot-btn-date { font-size: 10px; color: #888; margin-top: 5px; }
+        .slot-btn.empty .slot-btn-date { color: #555; }
+
+        #slot-menu-close {
+            background: #f44336; color: white; border: none; padding: 10px 20px;
+            border-radius: 8px; font-weight: bold; cursor: pointer;
         }
     </style>
 </head>
@@ -102,7 +125,8 @@
 
     <!-- PANTALLA DE MENÚ -->
     <div id="menu-screen">
-        <h1>🎮 Mis Emuladores</h1>
+        
+        <h1>🎮 Retro Web Emu</h1>
 
         <!-- Pestañas de Navegación -->
         <div class="tabs-container">
@@ -116,7 +140,7 @@
         <!-- Secciones -->
         <div id="tab-snes" class="console-section active">
             <div class="console-title" style="color:#4caf50;">Super Nintendo</div>
-            <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.smc')">The Legend of Zelda</button>
+            <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.smc', 'zelda.smc')">The Legend of Zelda</button>
             <div id="snes-auto-list"></div>
         </div>
 
@@ -148,9 +172,18 @@
 
     <!-- PANTALLA DE JUEGO -->
     <div id="game-screen">
-        <!-- Botón circular elegante estilo 'Cerrar App' -->
-        <button id="btn-back" onclick="location.reload()" title="Volver al Menú">✖</button>
         <div id="game-container"></div>
+    </div>
+
+    <!-- MENÚ DE SLOTS DE GUARDADO -->
+    <div id="slot-menu-overlay">
+        <div class="slot-menu-content">
+            <h2 id="slot-menu-title">Guardar Partida</h2>
+            <div id="slot-grid-container">
+                <!-- Los slots se generan aquí con JS -->
+            </div>
+            <button id="slot-menu-close" onclick="closeSlotMenu()">Cancelar</button>
+        </div>
     </div>
 
     <script>
@@ -161,25 +194,134 @@
             document.getElementById('tab-' + tabId).classList.add('active');
             btnElement.classList.add('active');
         }
-
-        function startGame(core, romUrl) {
+        
+        function startGame(core, romUrl, gameId) {
             // Ocultar menú y mostrar juego
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
 
-            // Variables que necesita EmulatorJS
-            window.EJS_player = '#game-container';
-            window.EJS_core = core;
-            window.EJS_gameUrl = romUrl;
-            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+            // Identificador seguro para el sistema de guardado
+            window.AVS_GAME_ID = gameId || romUrl.split('/').pop() || 'unknown_game';
+            
+            // Configuraciones añadidas
+            window.EJS_startOnLoaded = true; // Iniciar automáticamente sin pantalla previa
+            window.EJS_language = "es"; // Idioma en español
 
             // Desactivamos el botón de cámara rápida y utilidades de UI que ensucian la pantalla táctil
             window.EJS_Buttons = { fastForward: false };
 
             // Inyectar el script del emulador dinámicamente para que inicie
+            window.EJS_player = '#game-container';
+            window.EJS_core = core;
+            window.EJS_gameUrl = romUrl;
+            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
             var script = document.createElement('script');
             script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
             document.body.appendChild(script);
+
+            // Modificar el DOM del emulador (Iframe) una vez cargado para traducir y corregir botones
+            let ejsInterval = setInterval(() => {
+                // 1. Fallback súper infalible: Cuando EmulatorJS se cierra, elimina el iframe y pone el texto "exited" en el contenedor de nuestra página.
+                const container = document.getElementById('game-container');
+                if (container && container.innerText && container.innerText.toLowerCase().includes('exited')) {
+                    clearInterval(ejsInterval);
+                    window.location.reload();
+                    return;
+                }
+
+                try {
+                    const iframe = document.querySelector('#game-container iframe');
+                    if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
+                        const doc = iframe.contentWindow.document;
+
+                        // 2. Evitar que el menú (las 3 rayas o barra inferior) se cierre solo
+                        if (!doc.getElementById('avs-custom-css')) {
+                            const style = doc.createElement('style');
+                            style.id = 'avs-custom-css';
+                            style.innerHTML = `
+                                /* Mantener la barra inferior o botón de menú siempre visible */
+                                #bar, .bar, .menu-button, #menu-btn {
+                                    opacity: 1 !important;
+                                    visibility: visible !important;
+                                }
+                            `;
+                            doc.head.appendChild(style);
+                        }
+
+                        // 3. Traducir menú y arreglar el botón de salida
+                        const translations = {
+                            'Save State': 'Guardar Partida',
+                            'Load State': 'Cargar Partida',
+                            'Restart': 'Reiniciar',
+                            'Mute': 'Silenciar',
+                            'Unmute': 'Quitar Silencio',
+                            'Enter Fullscreen': 'Pantalla Completa',
+                            'Exit Fullscreen': 'Salir de Pantalla Completa',
+                            'Settings': 'Ajustes',
+                            'Controls': 'Controles',
+                            'Cheats': 'Trucos',
+                            'Netplay': 'Juego en Red',
+                            'Exit emulation': 'Cerrar juego',
+                            'Exit Emulation': 'Cerrar juego',
+                            'Salir de la emulación': 'Cerrar juego',
+                            'Salir': 'Cerrar juego',
+                            'Save State': 'Guardar Partida',
+                            'Load State': 'Cargar Partida'
+                        };
+
+                        const elements = doc.querySelectorAll('*:not(style):not(script)');
+                        for (const el of elements) {
+                            const text = el.textContent.trim();
+                            const isSaveButton = text === 'Save State' || text === 'Guardar Partida';
+                            const isLoadButton = text === 'Load State' || text === 'Cargar Partida';
+
+                            if (isSaveButton || isLoadButton) {
+                                const parentBtn = el.closest('div[role="button"], button') || el.parentElement;
+                                if (parentBtn && !parentBtn.dataset.hooked) {
+                                    parentBtn.dataset.hooked = "true";
+                                    const action = isSaveButton ? 'save' : 'load';
+                                    const openMenu = (e) => {
+                                        e.preventDefault(); e.stopPropagation();
+                                        window.parent.openSlotMenu(action);
+                                    };
+                                    parentBtn.addEventListener('click', openMenu, true);
+                                    parentBtn.addEventListener('touchend', openMenu, true);
+                                }
+                            }
+
+                            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3 && el.textContent.trim() !== '') {
+                                const originalText = el.textContent.trim();
+                                if (translations[originalText]) {
+                                    el.textContent = translations[originalText];
+
+                                    // Si es el botón de salir, necesitamos reemplazarlo para arreglar el cuelgue
+                                    const isExitButton = ['Exit emulation', 'Exit Emulation', 'Salir de la emulación', 'Salir'].includes(originalText);
+                                    
+                                    if (isExitButton) {
+                                        // Asegurarnos de usar el contenedor real del botón
+                                        const parentBtn = el.closest('div[role="button"], button') || el.parentElement;
+                                        if (parentBtn && !parentBtn.dataset.hooked) {
+                                            parentBtn.dataset.hooked = "true";
+                                            
+                                            const forceExit = (e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                window.location.reload();
+                                            };
+                                            
+                                            // Capturamos click tradicional y toques de móvil para asegurar el tiro
+                                            parentBtn.addEventListener('click', forceExit, true);
+                                            parentBtn.addEventListener('touchend', forceExit, true);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // Ignorar errores de cross-origin que ocurren mientras el iframe carga
+                }
+            }, 800); // Reducimos el intervalo para que la traducción sea más rápida
         }
 
         // =========================================================
@@ -199,8 +341,8 @@
                         btn.className = 'game-btn';
                         btn.style.backgroundColor = '#1565c0'; // Un color azul distinto
                         btn.innerText = '🎮 ' + file.name;
-                        // file.download_url es la ruta cruda del archivo (raw) para poder leerlo
-                        btn.onclick = () => startGame(core, file.download_url);
+                        // Pasamos file.name como ID estable para que IndexedDB sepa a qué juego pertenece el Slot
+                        btn.onclick = () => startGame(core, file.download_url, file.name);
                         list.appendChild(btn);
                     }
                 });
@@ -228,7 +370,7 @@
                 const name = file.name.toLowerCase();
                 
                 let core = '';
-                if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes';
+                if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes'; // Corregido para que sea 'snes'
                 else if (name.endsWith('.md') || name.endsWith('.gen') || name.endsWith('.bin')) core = 'sega';
                 else if (name.endsWith('.gb') || name.endsWith('.gbc') || name.endsWith('.gba')) core = 'gba';
                 else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
@@ -238,12 +380,153 @@
                     btn.className = 'game-btn';
                     btn.style.backgroundColor = '#e65100'; // Naranja distinto para diferenciarlos
                     btn.innerText = '🕹️ ' + file.name;
-                    // Creamos una URL temporal para usar el archivo que has seleccionado (¡sin subirlo a ningún lado!)
-                    btn.onclick = () => startGame(core, URL.createObjectURL(file));
+                    // Usamos file.name como identificador estable, de lo contrario createObjectURL cambia en cada carga y borraría el guardado
+                    btn.onclick = () => startGame(core, URL.createObjectURL(file), file.name);
                     listContainer.appendChild(btn);
                 }
             }
         }
+
+    // =========================================================
+    // SISTEMA DE GUARDADO LOCAL (INDEXEDDB) Y SLOTS
+    // =========================================================
+    const DB_NAME = 'RetroWebEmu_Saves';
+    const STORE_NAME = 'savestates';
+
+    function initSaveDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = (e) => {
+                let db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function getSlotInfo(gameId) {
+        const db = await initSaveDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.getAll();
+            req.onsuccess = () => {
+                const results = req.result.filter(r => r.gameId === gameId);
+                const info = {};
+                results.forEach(r => info[r.slot] = r.date);
+                resolve(info);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function saveStateToSlot(gameId, slot, dataArray) {
+        const db = await initSaveDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            store.put({
+                id: `${gameId}_slot${slot}`,
+                gameId: gameId,
+                slot: slot,
+                data: dataArray,
+                date: new Date().toLocaleString('es-ES')
+            });
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    async function loadStateFromSlot(gameId, slot) {
+        const db = await initSaveDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get(`${gameId}_slot${slot}`);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    window.openSlotMenu = async function(action) {
+        document.getElementById('slot-menu-title').innerText = action === 'save' ? 'Guardar en Slot' : 'Cargar de Slot';
+        
+        const gameId = window.AVS_GAME_ID || 'unknown_game';
+        const container = document.getElementById('slot-grid-container');
+        container.innerHTML = '<div style="grid-column: 1 / -1;">Cargando slots...</div>';
+        document.getElementById('slot-menu-overlay').style.display = 'flex';
+
+        try {
+            const info = await getSlotInfo(gameId);
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                const hasSave = !!info[i];
+                btn.className = `slot-btn ${hasSave ? '' : 'empty'}`;
+                
+                const title = document.createElement('div');
+                title.className = 'slot-btn-title';
+                title.innerText = `Slot ${i}`;
+                
+                const dateTxt = document.createElement('div');
+                dateTxt.className = 'slot-btn-date';
+                dateTxt.innerText = hasSave ? info[i] : 'Vacío';
+                if(hasSave && action === 'save') dateTxt.style.color = '#ff9800'; // Aviso de que se va a sobreescribir
+                
+                btn.appendChild(title);
+                btn.appendChild(dateTxt);
+                
+                btn.onclick = () => handleSlotClick(action, gameId, i);
+                container.appendChild(btn);
+            }
+        } catch (e) {
+            container.innerHTML = '<div style="grid-column: 1 / -1;">Error al cargar la base de datos de guardado.</div>';
+            console.error(e);
+        }
+    };
+
+    window.closeSlotMenu = function() {
+        document.getElementById('slot-menu-overlay').style.display = 'none';
+    };
+
+    async function handleSlotClick(action, gameId, slot) {
+        const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
+        
+        if (!emu || !emu.gameManager) {
+            alert("El emulador aún no está listo. Espera un momento o inicia un juego.");
+            return;
+        }
+
+        if (action === 'save') {
+            try {
+                const stateData = await emu.gameManager.getState(); // Llama a la API interna del emulador
+                await saveStateToSlot(gameId, slot, stateData);     // Guarda silenciosamente en el navegador
+                alert(`✅ Partida guardada correctamente en el Slot ${slot}`);
+                closeSlotMenu();
+            } catch (e) {
+                console.error("Error guardando state:", e);
+                alert("❌ Ocurrió un error al intentar guardar la partida.");
+            }
+        } else if (action === 'load') {
+            try {
+                const record = await loadStateFromSlot(gameId, slot);
+                if (!record) {
+                    alert("⚠️ Este slot está vacío. No hay nada que cargar.");
+                    return;
+                }
+                await emu.gameManager.loadState(record.data); // Llama a la API interna del emulador
+                alert(`✅ Partida cargada desde el Slot ${slot}`);
+                closeSlotMenu();
+            } catch (e) {
+                console.error("Error cargando state:", e);
+                alert("❌ Ocurrió un error al intentar cargar la partida.");
+            }
+        }
+    }
     </script>
 </body>
 </html>
