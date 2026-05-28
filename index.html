@@ -248,6 +248,10 @@
             window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
             var script = document.createElement('script');
             script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+            script.onerror = function() {
+                alert("⚠️ Error: El navegador bloqueó la carga del emulador.\n\nMotivos comunes:\n1. Tienes un bloqueador de anuncios (Brave, AdBlock).\n2. Estás en Modo Incógnito (Especialmente en Safari/iPhone).\n3. Problemas de conexión.\n\nPor favor, revisa esto y vuelve a intentarlo.");
+                window.location.reload();
+            };
             document.body.appendChild(script);
 
             // Modificar el DOM del emulador (Iframe) una vez cargado para traducir y corregir botones
