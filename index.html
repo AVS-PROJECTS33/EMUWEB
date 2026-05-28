@@ -52,6 +52,8 @@
             <div class="console-title">Super Nintendo (SNES)</div>
             <!-- Usamos la ruta local. Esto SOLO funciona si entras desde el enlace de Vercel -->
             <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.smc')">The Legend of Zelda</button>
+            <!-- Aquí se inyectarán los botones automáticamente -->
+            <div id="snes-auto-list"></div>
         </div>
 
         <div class="console-section">
@@ -59,6 +61,14 @@
             <!-- NOTA: Para que este botón funcione, debes crear una carpeta "MEGADRIVE" en tu GitHub y subir la ROM del juego. -->
             <!-- La URL debería ser: 'https://raw.githubusercontent.com/AVS-PROJECTS33/EMUWEB/main/MEGADRIVE/sonic.md' -->
             <button class="game-btn" onclick="alert('Primero debes subir la ROM de Sonic a una carpeta llamada MEGADRIVE en tu GitHub.')">Sonic The Hedgehog (No añadido)</button>
+            <div id="md-auto-list"></div>
+        </div>
+
+        <div class="console-section">
+            <div class="console-title" style="color:#ff9800;">Carga Local Automática</div>
+            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin" multiple style="display: none;" onchange="loadLocalRoms(event)">
+            <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
+            <div id="local-roms-list"></div>
         </div>
     </div>
 
@@ -84,6 +94,65 @@
             var script = document.createElement('script');
             script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
             document.body.appendChild(script);
+        }
+
+        // =========================================================
+        // OPCIÓN 1: DETECCIÓN AUTOMÁTICA DESDE TU REPOSITORIO GITHUB
+        // =========================================================
+        async function loadGithubRoms(user, repo, folder, core, containerId) {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${folder}`);
+                if (!res.ok) return; // Si la carpeta no existe, salimos silenciosamente
+                const files = await res.json();
+                
+                const list = document.getElementById(containerId);
+                files.forEach(file => {
+                    // Filtramos por extensiones válidas de SNES y Mega Drive
+                    if (file.name.match(/\.(smc|sfc|md|gen|bin)$/i)) {
+                        const btn = document.createElement('button');
+                        btn.className = 'game-btn';
+                        btn.style.backgroundColor = '#1565c0'; // Un color azul distinto
+                        btn.innerText = '🎮 ' + file.name;
+                        // file.download_url es la ruta cruda del archivo (raw) para poder leerlo
+                        btn.onclick = () => startGame(core, file.download_url);
+                        list.appendChild(btn);
+                    }
+                });
+            } catch (e) {
+                console.error(`Error al cargar la carpeta ${folder} desde GitHub:`, e);
+            }
+        }
+
+        // Llamamos a la API de GitHub (Asegúrate de que tu repositorio sea público)
+        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'SNES', 'snes', 'snes-auto-list');
+        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'MEGADRIVE', 'sega', 'md-auto-list');
+
+        // =========================================================
+        // OPCIÓN 2: CARGAR ROMS LOCALES DESDE EL DISPOSITIVO DEL USUARIO
+        // =========================================================
+        function loadLocalRoms(event) {
+            const files = event.target.files;
+            const listContainer = document.getElementById('local-roms-list');
+            listContainer.innerHTML = '';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const name = file.name.toLowerCase();
+                
+                let core = '';
+                if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes';
+                else if (name.endsWith('.md') || name.endsWith('.gen') || name.endsWith('.bin')) core = 'sega';
+
+                if (core) {
+                    const btn = document.createElement('button');
+                    btn.className = 'game-btn';
+                    btn.style.backgroundColor = '#e65100'; // Naranja distinto para diferenciarlos
+                    btn.innerText = '🕹️ ' + file.name;
+                    // Creamos una URL temporal para usar el archivo que has seleccionado (¡sin subirlo a ningún lado!)
+                    btn.onclick = () => startGame(core, URL.createObjectURL(file));
+                    listContainer.appendChild(btn);
+                }
+            }
         }
     </script>
 </body>
