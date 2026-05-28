@@ -281,11 +281,16 @@
                                     parentBtn.dataset.hooked = "true";
                                     const action = isSaveButton ? 'save' : 'load';
                                     const openMenu = (e) => {
-                                        e.preventDefault(); e.stopPropagation();
-                                        window.parent.openSlotMenu(action);
+                                        e.preventDefault(); 
+                                        e.stopPropagation();
+                                        e.stopImmediatePropagation(); // Bloquea totalmente al emulador
+                                        if (e.type === 'click' || e.type === 'touchend') {
+                                            setTimeout(() => window.parent.openSlotMenu(action), 10);
+                                        }
                                     };
-                                    parentBtn.addEventListener('click', openMenu, true);
-                                    parentBtn.addEventListener('touchend', openMenu, true);
+                                    ['mousedown', 'mouseup', 'click', 'touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(evt => {
+                                        parentBtn.addEventListener(evt, openMenu, true); // true = fase de captura (gana prioridad)
+                                    });
                                 }
                             }
 
@@ -306,12 +311,15 @@
                                             const forceExit = (e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                window.location.reload();
+                                                e.stopImmediatePropagation();
+                                                if (e.type === 'click' || e.type === 'touchend') {
+                                                    window.location.reload();
+                                                }
                                             };
                                             
-                                            // Capturamos click tradicional y toques de móvil para asegurar el tiro
-                                            parentBtn.addEventListener('click', forceExit, true);
-                                            parentBtn.addEventListener('touchend', forceExit, true);
+                                            ['mousedown', 'mouseup', 'click', 'touchstart', 'touchend', 'pointerdown', 'pointerup'].forEach(evt => {
+                                                parentBtn.addEventListener(evt, forceExit, true);
+                                            });
                                         }
                                     }
                                 }
