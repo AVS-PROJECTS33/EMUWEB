@@ -384,6 +384,99 @@
         // =========================================================
         const CATALOG_URL = "https://pub-7932d82ab8e64160a8ad206f72cc67ed.r2.dev/catalogo.json";
         const R2_BASE_URL = "https://pub-7932d82ab8e64160a8ad206f72cc67ed.r2.dev";
+        window.globalCatalog = [];
+
+        function getFavorites() {
+            return JSON.parse(localStorage.getItem('avs_favorites') || '[]');
+        }
+
+        function toggleFavorite(fileName) {
+            let favs = getFavorites();
+            if (favs.includes(fileName)) {
+                favs = favs.filter(f => f !== fileName);
+            } else {
+                favs.push(fileName);
+            }
+            localStorage.setItem('avs_favorites', JSON.stringify(favs));
+            renderAllGames(); 
+            filterGames(); 
+        }
+
+        function createGameButton(core, fileName, displayName, containerId, isFav) {
+            const list = document.getElementById(containerId);
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'game-wrapper';
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '8px';
+            wrapper.style.marginBottom = '12px';
+
+            const btn = document.createElement('button');
+            btn.className = 'game-btn';
+            btn.style.backgroundColor = '#1565c0'; 
+            btn.style.margin = '0';
+            btn.style.flex = '1';
+            btn.innerText = '🎮 ' + displayName;
+            
+            const fileUrl = `${R2_BASE_URL}/${encodeURI(fileName)}`;
+            btn.onclick = () => startGame(core, fileUrl, fileName);
+
+            // Botón de Favorito
+            const favBtn = document.createElement('button');
+            favBtn.innerHTML = isFav ? '⭐' : '☆';
+            favBtn.style.backgroundColor = isFav ? '#4a4a4a' : '#2a2a2a';
+            favBtn.style.border = '1px solid #444';
+            favBtn.style.color = isFav ? '#ffeb3b' : '#888';
+            favBtn.style.borderRadius = '8px';
+            favBtn.style.padding = '0 15px';
+            favBtn.style.fontSize = '20px';
+            favBtn.style.cursor = 'pointer';
+            favBtn.onclick = () => toggleFavorite(fileName);
+
+            wrapper.appendChild(btn);
+            wrapper.appendChild(favBtn);
+            list.appendChild(wrapper);
+        }
+
+        function renderAllGames() {
+            // Limpiamos las listas para evitar duplicados
+            document.getElementById('snes-auto-list').innerHTML = '';
+            document.getElementById('md-auto-list').innerHTML = '';
+            document.getElementById('gba-auto-list').innerHTML = '';
+            document.getElementById('psx-auto-list').innerHTML = '';
+            document.getElementById('nes-auto-list').innerHTML = '';
+            document.getElementById('ds-auto-list').innerHTML = '';
+            document.getElementById('fav-auto-list').innerHTML = '';
+
+            const favs = getFavorites();
+
+            window.globalCatalog.forEach(game => {
+                const fileName = game.archivo_url;
+                const displayName = game.nombre;
+                const nameLower = fileName.toLowerCase();
+                
+                let core = ''; let containerId = '';
+
+                if (nameLower.endsWith('.smc') || nameLower.endsWith('.sfc')) { core = 'snes'; containerId = 'snes-auto-list'; }
+                else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen') || nameLower.endsWith('.bin')) { core = 'sega'; containerId = 'md-auto-list'; }
+                else if (nameLower.endsWith('.gb') || nameLower.endsWith('.gbc') || nameLower.endsWith('.gba')) { core = 'gba'; containerId = 'gba-auto-list'; }
+                else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) { core = 'psx'; containerId = 'psx-auto-list'; }
+                else if (nameLower.endsWith('.nes')) { core = 'nes'; containerId = 'nes-auto-list'; }
+                else if (nameLower.endsWith('.nds')) { core = 'nds'; containerId = 'ds-auto-list'; }
+
+                if (core && containerId) {
+                    const isFav = favs.includes(fileName);
+                    createGameButton(core, fileName, displayName, containerId, isFav);
+                    if (isFav) {
+                        createGameButton(core, fileName, displayName, 'fav-auto-list', true);
+                    }
+                }
+            });
+
+            if (document.getElementById('fav-auto-list').innerHTML === '') {
+                document.getElementById('fav-auto-list').innerHTML = '<p style="color:#888; font-size:14px; text-align:center; padding: 20px;">Aún no tienes favoritos.<br>Usa la estrella (☆) para añadir juegos aquí.</p>';
+            }
+        }
 
         async function loadGamesFromCatalog() {
             try {
@@ -391,54 +484,8 @@
                 if (!response.ok) {
                     throw new Error(`Error de Cloudflare R2: ${response.status} - ${response.statusText}`);
                 }
-                const catalog = await response.json();
-
-                // Limpiamos las listas para evitar duplicados
-                document.getElementById('snes-auto-list').innerHTML = '';
-                document.getElementById('md-auto-list').innerHTML = '';
-                document.getElementById('gba-auto-list').innerHTML = '';
-                document.getElementById('psx-auto-list').innerHTML = '';
-                document.getElementById('nes-auto-list').innerHTML = '';
-                document.getElementById('ds-auto-list').innerHTML = '';
-
-                // Recorremos el nuevo formato de tu JSON
-                catalog.forEach(game => {
-                    const fileName = game.archivo_url;
-                    const displayName = game.nombre;
-                    const nameLower = fileName.toLowerCase();
-                    
-                    let core = '';
-                    let containerId = '';
-
-                    // Detectamos la consola según la extensión del archivo
-                    if (nameLower.endsWith('.smc') || nameLower.endsWith('.sfc')) {
-                        core = 'snes'; containerId = 'snes-auto-list';
-                    } else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen') || nameLower.endsWith('.bin')) {
-                        core = 'sega'; containerId = 'md-auto-list';
-                    } else if (nameLower.endsWith('.gb') || nameLower.endsWith('.gbc') || nameLower.endsWith('.gba')) {
-                        core = 'gba'; containerId = 'gba-auto-list';
-                    } else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) {
-                        core = 'psx'; containerId = 'psx-auto-list';
-                    } else if (nameLower.endsWith('.nes')) {
-                        core = 'nes'; containerId = 'nes-auto-list';
-                    } else if (nameLower.endsWith('.nds')) {
-                        core = 'nds'; containerId = 'ds-auto-list';
-                    }
-
-                    if (core && containerId) {
-                        const list = document.getElementById(containerId);
-                        const btn = document.createElement('button');
-                        btn.className = 'game-btn';
-                        btn.style.backgroundColor = '#1565c0'; 
-                        btn.innerText = '🎮 ' + displayName;
-                        
-                        // encodeURI evita fallos de descarga si los nombres de archivo tienen espacios
-                        const fileUrl = `${R2_BASE_URL}/${encodeURI(fileName)}`;
-                        
-                        btn.onclick = () => startGame(core, fileUrl, fileName);
-                        list.appendChild(btn);
-                    }
-                });
+                window.globalCatalog = await response.json();
+                renderAllGames();
             } catch (error) {
                 console.error("Error al procesar el catálogo JSON:", error);
                 alert(`⚠️ Error detallado al cargar la lista:\n\n${error.message}\n\n👉 Si el error dice "Failed to fetch", significa que te falta configurar el CORS en Cloudflare R2.\n👉 Si el error dice "Unexpected token", significa que el JSON sigue roto o en la caché.`);
