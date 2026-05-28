@@ -119,6 +119,14 @@
             background: #f44336; color: white; border: none; padding: 10px 20px;
             border-radius: 8px; font-weight: bold; cursor: pointer;
         }
+
+        /* Buscador */
+        #search-input {
+            width: 100%; max-width: 400px; padding: 12px; margin-bottom: 15px;
+            border-radius: 8px; border: 1px solid #444; background: #1e1e1e;
+            color: white; font-size: 15px; box-sizing: border-box;
+        }
+        #search-input::placeholder { color: #888; }
     </style>
 </head>
 <body>
@@ -128,43 +136,54 @@
         
         <h1>🎮 Retro Web Emu</h1>
 
+        <!-- Buscador -->
+        <input type="text" id="search-input" placeholder="🔍 Buscar juego..." onkeyup="filterGames()">
+
         <!-- Pestañas de Navegación -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchTab('snes', this)">🕹️ SNES</button>
             <button class="tab-btn" onclick="switchTab('md', this)">🌀 Mega Drive</button>
             <button class="tab-btn" onclick="switchTab('gba', this)">📱 Game Boy</button>
             <button class="tab-btn" onclick="switchTab('psx', this)">💿 PS1</button>
+            <button class="tab-btn" onclick="switchTab('nes', this)">🕹️ NES</button>
+            <button class="tab-btn" onclick="switchTab('ds', this)">🎮 NDS</button>
             <button class="tab-btn" onclick="switchTab('local', this)">📁 Local</button>
         </div>
 
         <!-- Secciones -->
         <div id="tab-snes" class="console-section active">
             <div class="console-title" style="color:#4caf50;">Super Nintendo</div>
-            <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.smc', 'zelda.smc')">The Legend of Zelda</button>
             <div id="snes-auto-list"></div>
         </div>
 
         <div id="tab-md" class="console-section">
             <div class="console-title" style="color:#2196f3;">Sega Genesis</div>
-            <button class="game-btn" onclick="alert('Primero debes subir la ROM de Sonic a una carpeta llamada MEGADRIVE en tu GitHub.')">Sonic The Hedgehog (No añadido)</button>
             <div id="md-auto-list"></div>
         </div>
 
         <div id="tab-gba" class="console-section">
             <div class="console-title" style="color:#9c27b0;">Game Boy (GBA/GBC/GB)</div>
-            <button class="game-btn" onclick="alert('Primero debes subir la ROM a una carpeta llamada GBA en tu GitHub.')">Pokémon (No añadido)</button>
             <div id="gba-auto-list"></div>
         </div>
 
         <div id="tab-psx" class="console-section">
             <div class="console-title" style="color:#e0e0e0;">PlayStation 1 (PSX)</div>
-            <button class="game-btn" onclick="alert('Para PS1 te recomendamos usar archivos .chd o .pbp y la carga Local, ya que los juegos pesan mucho.')">Crash Bandicoot (No añadido)</button>
             <div id="psx-auto-list"></div>
+        </div>
+
+        <div id="tab-nes" class="console-section">
+            <div class="console-title" style="color:#f44336;">Nintendo (NES)</div>
+            <div id="nes-auto-list"></div>
+        </div>
+
+        <div id="tab-ds" class="console-section">
+            <div class="console-title" style="color:#3b82f6;">Nintendo DS</div>
+            <div id="ds-auto-list"></div>
         </div>
 
         <div id="tab-local" class="console-section">
             <div class="console-title" style="color:#ff9800;">Carga Manual</div>
-            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp" multiple style="display: none;" onchange="loadLocalRoms(event)">
+            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.nes,.nds" multiple style="display: none;" onchange="loadLocalRoms(event)">
             <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
             <div id="local-roms-list"></div>
         </div>
@@ -187,6 +206,18 @@
     </div>
 
     <script>
+        // Función para filtrar juegos en el buscador
+        function filterGames() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            // Selecciona todos los botones de juego generados automáticamente en las listas
+            const gameButtons = document.querySelectorAll('[id$="-auto-list"] .game-btn');
+            
+            gameButtons.forEach(btn => {
+                const gameName = btn.innerText.toLowerCase();
+                btn.style.display = gameName.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+
         // Función para cambiar entre pestañas
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.console-section').forEach(sec => sec.classList.remove('active'));
@@ -239,10 +270,22 @@
                             const style = doc.createElement('style');
                             style.id = 'avs-custom-css';
                             style.innerHTML = `
-                                /* Mantener la barra inferior o botón de menú siempre visible */
-                                #bar, .bar, .menu-button, #menu-btn {
+                                /* Mantener SOLO la barra inferior negra siempre visible */
+                                #bar, .bar {
                                     opacity: 1 !important;
                                     visibility: visible !important;
+                                }
+                                
+                                /* Ocultar el botón de menú táctil flotante (entre los 4 botones) para evitar toques accidentales */
+                                .menu-button, #menu-btn, div[id*="touch"][id*="menu"], div[class*="touch"][class*="menu"] {
+                                    display: none !important;
+                                    pointer-events: none !important;
+                                }
+
+                                /* Asegurar que los botones dentro de la barra inferior negra sí funcionen */
+                                #bar .menu-button, #bar #menu-btn, .bar .menu-button, .bar #menu-btn {
+                                    display: inline-block !important;
+                                    pointer-events: auto !important;
                                 }
                             `;
                             doc.head.appendChild(style);
@@ -333,37 +376,73 @@
         }
 
         // =========================================================
-        // OPCIÓN 1: DETECCIÓN AUTOMÁTICA DESDE TU REPOSITORIO GITHUB
+        // OPCIÓN 1: CARGAR DESDE UN CATÁLOGO JSON EN CLOUDFLARE R2
         // =========================================================
-        async function loadGithubRoms(user, repo, folder, core, containerId) {
+        const CATALOG_URL = "https://pub-7932d82ab8e64160a8ad206f72cc67ed.r2.dev/catalogo.json";
+        const R2_BASE_URL = "https://pub-7932d82ab8e64160a8ad206f72cc67ed.r2.dev";
+
+        async function loadGamesFromCatalog() {
             try {
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${folder}`);
-                if (!res.ok) return; // Si la carpeta no existe, salimos silenciosamente
-                const files = await res.json();
-                
-                const list = document.getElementById(containerId);
-                files.forEach(file => {
-                    // Filtramos por extensiones de SNES, Mega Drive, GameBoy y PS1
-                    if (file.name.match(/\.(smc|sfc|md|gen|bin|gb|gbc|gba|iso|cue|chd|pbp)$/i)) {
+                const response = await fetch(CATALOG_URL);
+                if (!response.ok) {
+                    throw new Error(`Error de Cloudflare R2: ${response.status} - ${response.statusText}`);
+                }
+                const catalog = await response.json();
+
+                // Limpiamos las listas para evitar duplicados
+                document.getElementById('snes-auto-list').innerHTML = '';
+                document.getElementById('md-auto-list').innerHTML = '';
+                document.getElementById('gba-auto-list').innerHTML = '';
+                document.getElementById('psx-auto-list').innerHTML = '';
+                document.getElementById('nes-auto-list').innerHTML = '';
+                document.getElementById('ds-auto-list').innerHTML = '';
+
+                // Recorremos el nuevo formato de tu JSON
+                catalog.forEach(game => {
+                    const fileName = game.archivo_url;
+                    const displayName = game.nombre;
+                    const nameLower = fileName.toLowerCase();
+                    
+                    let core = '';
+                    let containerId = '';
+
+                    // Detectamos la consola según la extensión del archivo
+                    if (nameLower.endsWith('.smc') || nameLower.endsWith('.sfc')) {
+                        core = 'snes'; containerId = 'snes-auto-list';
+                    } else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen') || nameLower.endsWith('.bin')) {
+                        core = 'sega'; containerId = 'md-auto-list';
+                    } else if (nameLower.endsWith('.gb') || nameLower.endsWith('.gbc') || nameLower.endsWith('.gba')) {
+                        core = 'gba'; containerId = 'gba-auto-list';
+                    } else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) {
+                        core = 'psx'; containerId = 'psx-auto-list';
+                    } else if (nameLower.endsWith('.nes')) {
+                        core = 'nes'; containerId = 'nes-auto-list';
+                    } else if (nameLower.endsWith('.nds')) {
+                        core = 'nds'; containerId = 'ds-auto-list';
+                    }
+
+                    if (core && containerId) {
+                        const list = document.getElementById(containerId);
                         const btn = document.createElement('button');
                         btn.className = 'game-btn';
-                        btn.style.backgroundColor = '#1565c0'; // Un color azul distinto
-                        btn.innerText = '🎮 ' + file.name;
-                        // Pasamos file.name como ID estable para que IndexedDB sepa a qué juego pertenece el Slot
-                        btn.onclick = () => startGame(core, file.download_url, file.name);
+                        btn.style.backgroundColor = '#1565c0'; 
+                        btn.innerText = '🎮 ' + displayName;
+                        
+                        // encodeURI evita fallos de descarga si los nombres de archivo tienen espacios
+                        const fileUrl = `${R2_BASE_URL}/${encodeURI(fileName)}`;
+                        
+                        btn.onclick = () => startGame(core, fileUrl, fileName);
                         list.appendChild(btn);
                     }
                 });
-            } catch (e) {
-                console.error(`Error al cargar la carpeta ${folder} desde GitHub:`, e);
+            } catch (error) {
+                console.error("Error al procesar el catálogo JSON:", error);
+                alert(`⚠️ Error detallado al cargar la lista:\n\n${error.message}\n\n👉 Si el error dice "Failed to fetch", significa que te falta configurar el CORS en Cloudflare R2.\n👉 Si el error dice "Unexpected token", significa que el JSON sigue roto o en la caché.`);
             }
         }
 
-        // Llamamos a la API de GitHub (Asegúrate de que tu repositorio sea público)
-        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'SNES', 'snes', 'snes-auto-list');
-        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'MEGADRIVE', 'sega', 'md-auto-list');
-        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'GBA', 'gba', 'gba-auto-list');
-        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'PS1', 'psx', 'psx-auto-list');
+        // Llamamos a la nueva función al cargar la página
+        loadGamesFromCatalog();
 
         // =========================================================
         // OPCIÓN 2: CARGAR ROMS LOCALES DESDE EL DISPOSITIVO DEL USUARIO
@@ -382,6 +461,8 @@
                 else if (name.endsWith('.md') || name.endsWith('.gen') || name.endsWith('.bin')) core = 'sega';
                 else if (name.endsWith('.gb') || name.endsWith('.gbc') || name.endsWith('.gba')) core = 'gba';
                 else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
+                else if (name.endsWith('.nes')) core = 'nes';
+                else if (name.endsWith('.nds')) core = 'nds';
 
                 if (core) {
                     const btn = document.createElement('button');
