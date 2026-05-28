@@ -5,29 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Retro Emu">
     <title>Retro Web Emu</title>
+
+    <!-- Icono Retro Gamepad (SNES style) integrado en Base64 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzJiMmIyYiIvPjxyZWN0IHg9IjU2IiB5PSIxNTYiIHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiByeD0iMTAwIiBmaWxsPSIjZGZkZmRmIi8+PHJlY3QgeD0iMTE2IiB5PSIyMzYiIHdpZHRoPSI4MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjEzNiIgeT0iMjE2IiB3aWR0aD0iNDAiIGhlaWdodD0iODAiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSIzODYiIGN5PSIyMjYiIHI9IjIwIiBmaWxsPSIjZTc0YzNjIi8+PGNpcmNsZSBjeD0iMzQ2IiBjeT0iMjU2IiByPSIyMCIgZmlsbD0iI2YxYzQwZiIvPjxjaXJjbGUgY3g9IjQyNiIgY3k9IjI1NiIgcj0iMjAiIGZpbGw9IiNlNzRjM2MiLz48Y2lyY2xlIGN4PSIzODYiIGN5PSIyODYiIHI9IjIwIiBmaWxsPSIjZjFjNDBmIi8+PHJlY3QgeD0iMjE2IiB5PSIyNjYiIHdpZHRoPSIzMCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiM1NTUiIHRyYW5zZm9ybT0icm90YXRlKC0zMCAyMzEgMjcxKSIvPjxyZWN0IHg9IjI2NiIgeT0iMjY2IiB3aWR0aD0iMzAiIGhlaWdodD0iMTAiIHJ4PSI1IiBmaWxsPSIjNTU1IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMjgxIDI3MSkiLz48L3N2Zz4=">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzJiMmIyYiIvPjxyZWN0IHg9IjU2IiB5PSIxNTYiIHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiByeD0iMTAwIiBmaWxsPSIjZGZkZmRmIi8+PHJlY3QgeD0iMTE2IiB5PSIyMzYiIHdpZHRoPSI4MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjEzNiIgeT0iMjE2IiB3aWR0aD0iNDAiIGhlaWdodD0iODAiIGZpbGw9IiMzMzMiLz48Y2lyY2xlIGN4PSIzODYiIGN5PSIyMjYiIHI9IjIwIiBmaWxsPSIjZTc0YzNjIi8+PGNpcmNsZSBjeD0iMzQ2IiBjeT0iMjU2IiByPSIyMCIgZmlsbD0iI2YxYzQwZiIvPjxjaXJjbGUgY3g9IjQyNiIgY3k9IjI1NiIgcj0iMjAiIGZpbGw9IiNlNzRjM2MiLz48Y2lyY2xlIGN4PSIzODYiIGN5PSIyODYiIHI9IjIwIiBmaWxsPSIjZjFjNDBmIi8+PHJlY3QgeD0iMjE2IiB5PSIyNjYiIHdpZHRoPSIzMCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiM1NTUiIHRyYW5zZm9ybT0icm90YXRlKC0zMCAyMzEgMjcxKSIvPjxyZWN0IHg9IjI2NiIgeT0iMjY2IiB3aWR0aD0iMzAiIGhlaWdodD0iMTAiIHJ4PSI1IiBmaWxsPSIjNTU1IiB0cmFuc2Zvcm09InJvdGF0ZSgtMzAgMjgxIDI3MSkiLz48L3N2Zz4=">
+
+    <!-- Script para renderizar icono en iOS al vuelo (Solución al bug de SVG de Apple) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                const pngData = canvas.toDataURL("image/png");
+                let link = document.querySelector('link[rel="apple-touch-icon"]');
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'apple-touch-icon';
+                    document.head.appendChild(link);
+                }
+                link.href = pngData; // Sustituye el SVG por un PNG compatible con iPhone
+            };
+            img.src = document.querySelector('link[rel="apple-touch-icon"]').href;
+        });
+    </script>
+
     <style>
         body, html {
-            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            margin: 0; padding: 0; width: 100vw; height: 100dvh; /* dvh corrige el scroll en móviles */
             background-color: #111; color: white; font-family: sans-serif;
             overflow: hidden;
         }
         /* Menú Principal */
         #menu-screen {
             display: flex; flex-direction: column; align-items: center;
-            padding: 20px; text-align: center; height: 100%; overflow-y: auto;
+            padding: 20px; padding-bottom: 60px; text-align: center; 
+            height: 100%; overflow-y: auto; box-sizing: border-box;
         }
-        h1 { color: #ffeb3b; margin-bottom: 30px; font-size: 24px; }
-        .console-section { width: 100%; max-width: 400px; margin-bottom: 30px; }
+        h1 { color: #ffeb3b; margin-bottom: 20px; font-size: 24px; }
+        
+        /* Navegación por Pestañas Superiores */
+        .tabs-container {
+            display: flex; gap: 5px; margin-bottom: 25px; width: 100%; max-width: 400px;
+            background: #1e1e1e; padding: 6px; border-radius: 12px; border: 1px solid #333;
+            flex-wrap: wrap; /* Permite que las pestañas pasen a otra línea si no caben en el móvil */
+        }
+        .tab-btn {
+            background: transparent; border: none; color: #888;
+            padding: 10px 5px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 13px; flex: 1 1 30%; transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #333; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .console-section { width: 100%; max-width: 400px; display: none; }
+        .console-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
         .console-title { 
-            font-size: 18px; border-bottom: 2px solid #555; 
-            padding-bottom: 5px; margin-bottom: 15px; color: #4caf50; 
-            font-weight: bold;
+            font-size: 15px; border-bottom: 2px solid #333; 
+            padding-bottom: 8px; margin-bottom: 15px; color: #888; 
+            font-weight: bold; text-align: left; text-transform: uppercase; letter-spacing: 1px;
         }
+
         .game-btn {
-            background: #333; border: 1px solid #555; color: white;
-            padding: 15px; margin-bottom: 10px; width: 100%; border-radius: 8px;
-            font-size: 16px; cursor: pointer; transition: background 0.2s;
+            background: #2a2a2a; border: 1px solid #444; color: white;
+            padding: 16px; margin-bottom: 12px; width: 100%; border-radius: 8px;
+            font-size: 15px; cursor: pointer; transition: background 0.2s;
+            text-align: left; font-weight: 500; display: block;
         }
         .game-btn:active { background: #555; }
 
@@ -36,9 +87,14 @@
         #game-container { width: 100%; height: 100%; }
         
         #btn-back {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: rgba(0,0,0,0.6); color: white; border: 1px solid white;
-            padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;
+            position: fixed; top: 15px; left: 15px; z-index: 9999;
+            background: rgba(0,0,0,0.4); color: #fff; border: 2px solid rgba(255,255,255,0.2);
+            width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px;
+            display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px); transition: all 0.3s; padding: 0;
+        }
+        #btn-back:hover {
+            background: rgba(220, 38, 38, 0.8); border-color: #f87171; transform: scale(1.1);
         }
     </style>
 </head>
@@ -48,37 +104,64 @@
     <div id="menu-screen">
         <h1>🎮 Mis Emuladores</h1>
 
-        <div class="console-section">
-            <div class="console-title">Super Nintendo (SNES)</div>
-            <!-- Usamos la ruta local. Esto SOLO funciona si entras desde el enlace de Vercel -->
+        <!-- Pestañas de Navegación -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('snes', this)">🕹️ SNES</button>
+            <button class="tab-btn" onclick="switchTab('md', this)">🌀 Mega Drive</button>
+            <button class="tab-btn" onclick="switchTab('gba', this)">📱 Game Boy</button>
+            <button class="tab-btn" onclick="switchTab('psx', this)">💿 PS1</button>
+            <button class="tab-btn" onclick="switchTab('local', this)">📁 Local</button>
+        </div>
+
+        <!-- Secciones -->
+        <div id="tab-snes" class="console-section active">
+            <div class="console-title" style="color:#4caf50;">Super Nintendo</div>
             <button class="game-btn" onclick="startGame('snes', 'SNES/zelda.smc')">The Legend of Zelda</button>
-            <!-- Aquí se inyectarán los botones automáticamente -->
             <div id="snes-auto-list"></div>
         </div>
 
-        <div class="console-section">
-            <div class="console-title" style="color:#2196f3;">Mega Drive (Genesis)</div>
-            <!-- NOTA: Para que este botón funcione, debes crear una carpeta "MEGADRIVE" en tu GitHub y subir la ROM del juego. -->
-            <!-- La URL debería ser: 'https://raw.githubusercontent.com/AVS-PROJECTS33/EMUWEB/main/MEGADRIVE/sonic.md' -->
+        <div id="tab-md" class="console-section">
+            <div class="console-title" style="color:#2196f3;">Sega Genesis</div>
             <button class="game-btn" onclick="alert('Primero debes subir la ROM de Sonic a una carpeta llamada MEGADRIVE en tu GitHub.')">Sonic The Hedgehog (No añadido)</button>
             <div id="md-auto-list"></div>
         </div>
 
-        <div class="console-section">
-            <div class="console-title" style="color:#ff9800;">Carga Local Automática</div>
-            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin" multiple style="display: none;" onchange="loadLocalRoms(event)">
-            <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
+        <div id="tab-gba" class="console-section">
+            <div class="console-title" style="color:#9c27b0;">Game Boy (GBA/GBC/GB)</div>
+            <button class="game-btn" onclick="alert('Primero debes subir la ROM a una carpeta llamada GBA en tu GitHub.')">Pokémon (No añadido)</button>
+            <div id="gba-auto-list"></div>
+        </div>
+
+        <div id="tab-psx" class="console-section">
+            <div class="console-title" style="color:#e0e0e0;">PlayStation 1 (PSX)</div>
+            <button class="game-btn" onclick="alert('Para PS1 te recomendamos usar archivos .chd o .pbp y la carga Local, ya que los juegos pesan mucho.')">Crash Bandicoot (No añadido)</button>
+            <div id="psx-auto-list"></div>
+        </div>
+
+        <div id="tab-local" class="console-section">
+            <div class="console-title" style="color:#ff9800;">Carga Manual</div>
+            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp" multiple style="display: none;" onchange="loadLocalRoms(event)">
+            <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
             <div id="local-roms-list"></div>
         </div>
     </div>
 
     <!-- PANTALLA DE JUEGO -->
     <div id="game-screen">
-        <button id="btn-back" onclick="location.reload()">◀ Volver al Menú</button>
+        <!-- Botón circular elegante estilo 'Cerrar App' -->
+        <button id="btn-back" onclick="location.reload()" title="Volver al Menú">✖</button>
         <div id="game-container"></div>
     </div>
 
     <script>
+        // Función para cambiar entre pestañas
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.console-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
         function startGame(core, romUrl) {
             // Ocultar menú y mostrar juego
             document.getElementById('menu-screen').style.display = 'none';
@@ -89,6 +172,9 @@
             window.EJS_core = core;
             window.EJS_gameUrl = romUrl;
             window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+
+            // Desactivamos el botón de cámara rápida y utilidades de UI que ensucian la pantalla táctil
+            window.EJS_Buttons = { fastForward: false };
 
             // Inyectar el script del emulador dinámicamente para que inicie
             var script = document.createElement('script');
@@ -107,8 +193,8 @@
                 
                 const list = document.getElementById(containerId);
                 files.forEach(file => {
-                    // Filtramos por extensiones válidas de SNES y Mega Drive
-                    if (file.name.match(/\.(smc|sfc|md|gen|bin)$/i)) {
+                    // Filtramos por extensiones de SNES, Mega Drive, GameBoy y PS1
+                    if (file.name.match(/\.(smc|sfc|md|gen|bin|gb|gbc|gba|iso|cue|chd|pbp)$/i)) {
                         const btn = document.createElement('button');
                         btn.className = 'game-btn';
                         btn.style.backgroundColor = '#1565c0'; // Un color azul distinto
@@ -126,6 +212,8 @@
         // Llamamos a la API de GitHub (Asegúrate de que tu repositorio sea público)
         loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'SNES', 'snes', 'snes-auto-list');
         loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'MEGADRIVE', 'sega', 'md-auto-list');
+        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'GBA', 'gba', 'gba-auto-list');
+        loadGithubRoms('AVS-PROJECTS33', 'EMUWEB', 'PS1', 'psx', 'psx-auto-list');
 
         // =========================================================
         // OPCIÓN 2: CARGAR ROMS LOCALES DESDE EL DISPOSITIVO DEL USUARIO
@@ -142,6 +230,8 @@
                 let core = '';
                 if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes';
                 else if (name.endsWith('.md') || name.endsWith('.gen') || name.endsWith('.bin')) core = 'sega';
+                else if (name.endsWith('.gb') || name.endsWith('.gbc') || name.endsWith('.gba')) core = 'gba';
+                else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
 
                 if (core) {
                     const btn = document.createElement('button');
