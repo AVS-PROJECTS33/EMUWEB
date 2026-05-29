@@ -174,7 +174,13 @@
         </div>
 
         <div id="tab-psx" class="console-section">
-            <div class="console-title" style="color:#e0e0e0;">PlayStation 1 (PSX)</div>
+            <div class="console-title" style="color:#e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                <span>PlayStation 1 (PSX)</span>
+                <select id="psx-core-select" style="background: #2a2a2a; color: #fff; border: 1px solid #555; padding: 4px 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: none; letter-spacing: normal; outline: none;">
+                    <option value="psx">⚙️ Beetle PSX</option>
+                    <option value="swanstation">⚙️ SwanStation</option>
+                </select>
+            </div>
             <div id="psx-auto-list"></div>
         </div>
 
@@ -275,6 +281,14 @@
             // Ocultar menú y mostrar juego
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
+
+            // Comprobar si es un juego de PS1 para aplicar el motor seleccionado en la pestaña
+            if (core === 'psx') {
+                const psxCoreSelect = document.getElementById('psx-core-select');
+                if (psxCoreSelect) {
+                    core = psxCoreSelect.value;
+                }
+            }
 
             // Identificador seguro para el sistema de guardado
             window.AVS_GAME_ID = gameId || romUrl.split('/').pop() || 'unknown_game';
@@ -762,6 +776,35 @@
         document.getElementById('slot-menu-overlay').style.display = 'none';
     };
 
+    window.showToast = function(msg) {
+        let toast = document.getElementById('avs-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'avs-toast';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '30px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(0,0,0,0.8)';
+            toast.style.color = '#fff';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '20px';
+            toast.style.zIndex = '10000';
+            toast.style.fontSize = '14px';
+            toast.style.fontWeight = 'bold';
+            toast.style.pointerEvents = 'none';
+            toast.style.transition = 'opacity 0.3s';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        
+        if (toast.timeout) clearTimeout(toast.timeout);
+        toast.timeout = setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 2500);
+    };
+
     async function handleSlotClick(action, gameId, slot) {
         const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
         
@@ -778,8 +821,7 @@
                 const stateData = await emu.gameManager.getState(); // Llama a la API interna del emulador
                 await saveStateToSlot(gameId, slot, stateData, customName); // Guarda silenciosamente en el navegador
                 closeSlotMenu();
-                // Retrasamos el alert para que no bloquee el hilo principal y no congele el emulador
-                setTimeout(() => alert(`✅ Partida guardada correctamente en: ${customName || `Slot ${slot}`}`), 100);
+                showToast(`✅ Partida guardada en: ${customName || `Slot ${slot}`}`);
             } catch (e) {
                 console.error("Error guardando state:", e);
                 alert("❌ Ocurrió un error al intentar guardar la partida.");
@@ -795,7 +837,7 @@
                 const stateData = new Uint8Array(record.data);
                 await emu.gameManager.loadState(stateData); // Llama a la API interna del emulador
                 closeSlotMenu();
-                setTimeout(() => alert(`✅ Partida cargada desde el Slot ${slot}`), 100);
+                showToast(`✅ Partida cargada desde el Slot ${slot}`);
             } catch (e) {
                 console.error("Error cargando state:", e);
                 alert("❌ Ocurrió un error al intentar cargar la partida.");
