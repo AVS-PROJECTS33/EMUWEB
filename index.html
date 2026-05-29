@@ -196,7 +196,7 @@
         <div id="tab-local" class="console-section">
             <div class="console-title" style="color:#ff9800;">Carga Manual</div>
             <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.nes,.nds,.n64,.v64,.z64" multiple style="display: none;" onchange="loadLocalRoms(event)">
-            <button class="game-btn" onclick="document.getElementById('rom-upload').click()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
+            <button class="game-btn" onclick="openLocalRoms()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
             <div id="local-roms-list"></div>
         </div>
     </div>
@@ -204,6 +204,41 @@
     <!-- PANTALLA DE JUEGO -->
     <div id="game-screen">
         <div id="game-container"></div>
+        
+        <!-- Botón flotante independiente (Discreto, arriba a la izquierda) -->
+        <button onclick="openOptionsMenu()" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'" style="position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.4); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); width: 42px; height: 42px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 9997; backdrop-filter: blur(3px); font-size: 20px; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.3); opacity: 0.5; transition: opacity 0.3s;">
+            ⚙️
+        </button>
+    </div>
+
+    <!-- MENÚ DE OPCIONES DE PARTIDA -->
+    <div id="options-menu-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9998;">
+        <div class="slot-menu-content" style="display: flex; flex-direction: column; gap: 10px; padding: 18px;">
+            <h2 style="color: #ffeb3b; margin-top: 0; margin-bottom: 5px;">Herramientas</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="game-btn" onclick="closeOptionsMenu(); openSlotMenu('save')" style="background: #1565c0; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">💾 Guardar</button>
+                <button class="game-btn" onclick="closeOptionsMenu(); openSlotMenu('load')" style="background: #2e7d32; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">📂 Cargar</button>
+            </div>
+            
+            <button class="game-btn" onclick="openControlsMenu()" style="background: #607d8b; text-align: center; margin-bottom: 0; padding: 12px; font-size: 14px; width: 100%;">🎮 Ajustar Controles / Mando</button>
+
+            <div style="height: 1px; background: #444; margin: 4px 0;"></div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; background: #2a2a2a; padding: 10px 15px; border-radius: 8px; border: 1px solid #555;">
+                <button id="mute-btn" onclick="toggleMute()" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: white; padding: 0; width: 30px;">🔊</button>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" oninput="changeVolume(this.value)" style="flex: 1; cursor: pointer;">
+            </div>
+
+            <div style="height: 1px; background: #444; margin: 4px 0;"></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="game-btn" onclick="restartGameAction()" style="background: #e65100; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">🔄 Reiniciar juego</button>
+                <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
+            </div>
+            
+            <button onclick="closeOptionsMenu()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px;">Cerrar Menú</button>
+        </div>
     </div>
 
     <!-- MENÚ DE SLOTS DE GUARDADO -->
@@ -294,10 +329,10 @@
                                 }
                                 
                                 /* Ocultar el botón de menú táctil flotante (entre los 4 botones) para evitar toques accidentales */
-                                .menu-button, #menu-btn, div[id*="touch"][id*="menu"], div[class*="touch"][class*="menu"] {
-                                    display: none !important;
-                                    pointer-events: none !important;
-                                }
+                                /* .menu-button, #menu-btn, div[id*="touch"][id*="menu"], div[class*="touch"][class*="menu"] { */
+                                /*     display: none !important; */
+                                /*     pointer-events: none !important; */
+                                /* } */
 
                                 /* Asegurar que los botones dentro de la barra inferior negra sí funcionen */
                                 #bar .menu-button, #bar #menu-btn, .bar .menu-button, .bar #menu-btn {
@@ -308,29 +343,7 @@
                             doc.head.appendChild(style);
                         }
 
-                        // 3. Inyectar botones de Guardado personalizados en la barra inferior nativa
-                        const bar = doc.getElementById('bar') || doc.querySelector('.bar');
-                        if (bar && !doc.getElementById('custom-avs-saves')) {
-                            const btnContainer = doc.createElement('div');
-                            btnContainer.id = 'custom-avs-saves';
-                            btnContainer.style.cssText = 'display: inline-flex; gap: 10px; margin-left: 15px; align-items: center; z-index: 9999;';
-                            
-                            const btnSave = doc.createElement('button');
-                            btnSave.innerHTML = '💾 Guardar';
-                            btnSave.style.cssText = 'background: #1565c0; color: white; border: 1px solid #111; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
-                            btnSave.onclick = (e) => { e.preventDefault(); e.stopPropagation(); window.parent.openSlotMenu('save'); };
-
-                            const btnLoad = doc.createElement('button');
-                            btnLoad.innerHTML = '📂 Cargar';
-                            btnLoad.style.cssText = 'background: #2e7d32; color: white; border: 1px solid #111; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
-                            btnLoad.onclick = (e) => { e.preventDefault(); e.stopPropagation(); window.parent.openSlotMenu('load'); };
-
-                            btnContainer.appendChild(btnSave);
-                            btnContainer.appendChild(btnLoad);
-                            bar.appendChild(btnContainer);
-                        }
-
-                        // 4. Traducir menú y arreglar el botón de salida
+                        // 3. Traducir menú y arreglar el botón de salida
                         const translations = {
                             'Save State': 'Guardar Partida',
                             'Load State': 'Cargar Partida',
@@ -341,6 +354,7 @@
                             'Exit Fullscreen': 'Salir de Pantalla Completa',
                             'Settings': 'Ajustes',
                             'Controls': 'Controles',
+                            'Control Settings': 'Controles',
                             'Cheats': 'Trucos',
                             'Netplay': 'Juego en Red',
                             'Exit emulation': 'Cerrar juego',
@@ -395,7 +409,7 @@
                                                 e.stopPropagation();
                                                 e.stopImmediatePropagation();
                                                 if (e.type === 'click' || e.type === 'touchend') {
-                                                    window.location.reload();
+                                                    window.parent.confirmExit();
                                                 }
                                             };
                                             
@@ -495,7 +509,11 @@
                 let core = ''; let containerId = '';
 
                 if (nameLower.endsWith('.smc') || nameLower.endsWith('.sfc')) { core = 'snes'; containerId = 'snes-auto-list'; }
-                else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen') || nameLower.endsWith('.bin')) { core = 'sega'; containerId = 'md-auto-list'; }
+                else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen')) { core = 'sega'; containerId = 'md-auto-list'; }
+                else if (nameLower.endsWith('.bin')) {
+                    if (nameLower.includes('ps1') || nameLower.includes('psx') || nameLower.includes('playstation')) { core = 'psx'; containerId = 'psx-auto-list'; }
+                    else { core = 'sega'; containerId = 'md-auto-list'; }
+                }
                 else if (nameLower.endsWith('.gb') || nameLower.endsWith('.gbc') || nameLower.endsWith('.gba')) { core = 'gba'; containerId = 'gba-auto-list'; }
                 else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) { core = 'psx'; containerId = 'psx-auto-list'; }
                 else if (nameLower.endsWith('.nes')) { core = 'nes'; containerId = 'nes-auto-list'; }
@@ -536,8 +554,41 @@
         // =========================================================
         // OPCIÓN 2: CARGAR ROMS LOCALES DESDE EL DISPOSITIVO DEL USUARIO
         // =========================================================
+        async function openLocalRoms() {
+            if (window.showOpenFilePicker) {
+                try {
+                    const fileHandles = await window.showOpenFilePicker({
+                        id: 'retro-emu-roms-folder', // Identificador para que el navegador recuerde la última carpeta
+                        multiple: true,
+                        types: [{
+                            description: 'ROMs de Juegos',
+                            accept: {
+                                'application/octet-stream': ['.smc','.sfc','.md','.gen','.bin','.gb','.gbc','.gba','.iso','.cue','.chd','.pbp','.nes','.nds','.n64','.v64','.z64']
+                            }
+                        }]
+                    });
+                    const files = [];
+                    for (const handle of fileHandles) {
+                        files.push(await handle.getFile());
+                    }
+                    processLocalFiles(files);
+                } catch (err) {
+                    // Si el usuario cancela no hacemos nada, si es otro error usamos el fallback clásico
+                    if (err.name !== 'AbortError') {
+                        document.getElementById('rom-upload').click();
+                    }
+                }
+            } else {
+                // Fallback para navegadores antiguos, Safari, Firefox o móviles
+                document.getElementById('rom-upload').click();
+            }
+        }
+
         function loadLocalRoms(event) {
-            const files = event.target.files;
+            processLocalFiles(event.target.files);
+        }
+
+        function processLocalFiles(files) {
             const listContainer = document.getElementById('local-roms-list');
             listContainer.innerHTML = '';
 
@@ -547,7 +598,11 @@
                 
                 let core = '';
                 if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes'; // Corregido para que sea 'snes'
-                else if (name.endsWith('.md') || name.endsWith('.gen') || name.endsWith('.bin')) core = 'sega';
+                else if (name.endsWith('.md') || name.endsWith('.gen')) core = 'sega';
+                else if (name.endsWith('.bin')) {
+                    // Si el archivo pesa más de 15MB, es casi seguro un CD de PS1. Si es menos, es cartucho de Mega Drive.
+                    if (file.size > 15 * 1024 * 1024) core = 'psx'; else core = 'sega';
+                }
                 else if (name.endsWith('.gb') || name.endsWith('.gbc') || name.endsWith('.gba')) core = 'gba';
                 else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
                 else if (name.endsWith('.nes')) core = 'nes';
@@ -595,14 +650,14 @@
             req.onsuccess = () => {
                 const results = req.result.filter(r => r.gameId === gameId);
                 const info = {};
-                results.forEach(r => info[r.slot] = r.date);
+                results.forEach(r => info[r.slot] = { date: r.date, name: r.name });
                 resolve(info);
             };
             req.onerror = () => reject(req.error);
         });
     }
 
-    async function saveStateToSlot(gameId, slot, dataArray) {
+    async function saveStateToSlot(gameId, slot, dataArray, customName = null) {
         const db = await initSaveDB();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -611,6 +666,7 @@
                 id: `${gameId}_slot${slot}`,
                 gameId: gameId,
                 slot: slot,
+                name: customName,
                 data: dataArray,
                 date: new Date().toLocaleString('es-ES')
             });
@@ -649,11 +705,12 @@
                 
                 const title = document.createElement('div');
                 title.className = 'slot-btn-title';
-                title.innerText = `Slot ${i}`;
+                const defaultName = `Slot ${i}`;
+                title.innerText = hasSave && info[i].name ? info[i].name : defaultName;
                 
                 const dateTxt = document.createElement('div');
                 dateTxt.className = 'slot-btn-date';
-                dateTxt.innerText = hasSave ? info[i] : 'Vacío';
+                dateTxt.innerText = hasSave ? info[i].date : 'Vacío';
                 if(hasSave && action === 'save') dateTxt.style.color = '#ff9800'; // Aviso de que se va a sobreescribir
                 
                 btn.appendChild(title);
@@ -681,10 +738,13 @@
         }
 
         if (action === 'save') {
+            const customName = prompt(`Ponle un nombre a este guardado (ej: "Antes del jefe") o déjalo así:`, `Slot ${slot}`);
+            if (customName === null) return; // El usuario pulsó cancelar
+
             try {
                 const stateData = await emu.gameManager.getState(); // Llama a la API interna del emulador
-                await saveStateToSlot(gameId, slot, stateData);     // Guarda silenciosamente en el navegador
-                alert(`✅ Partida guardada correctamente en el Slot ${slot}`);
+                await saveStateToSlot(gameId, slot, stateData, customName); // Guarda silenciosamente en el navegador
+                alert(`✅ Partida guardada correctamente en: ${customName || `Slot ${slot}`}`);
                 closeSlotMenu();
             } catch (e) {
                 console.error("Error guardando state:", e);
@@ -706,6 +766,163 @@
             }
         }
     }
+
+    // =========================================================
+    // FUNCIONES DEL NUEVO MENÚ DE OPCIONES
+    // =========================================================
+    window.openOptionsMenu = function() {
+        document.getElementById('options-menu-overlay').style.display = 'flex';
+    };
+
+    window.closeOptionsMenu = function() {
+        document.getElementById('options-menu-overlay').style.display = 'none';
+    };
+
+    window.confirmExit = function() {
+        if (confirm("¿Estás seguro de que quieres salir?\nAsegúrate de haber guardado tu partida antes.")) {
+            window.location.reload();
+        }
+    };
+
+    let isMuted = false;
+    window.toggleMute = function() {
+        const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
+        if (!emu) return;
+
+        isMuted = !isMuted;
+        const muteBtn = document.getElementById('mute-btn');
+        
+        if (isMuted) {
+            muteBtn.innerText = '🔇';
+            if (emu.mute) emu.mute();
+        } else {
+            muteBtn.innerText = '🔊';
+            if (emu.unmute) emu.unmute();
+            
+            const vol = document.getElementById('volume-slider').value;
+            if (emu.setVolume) emu.setVolume(parseFloat(vol));
+        }
+    };
+
+    window.changeVolume = function(val) {
+        const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
+        if (!emu) return;
+        
+        const volume = parseFloat(val);
+        if (emu.setVolume) emu.setVolume(volume);
+        
+        const muteBtn = document.getElementById('mute-btn');
+        if (volume === 0) {
+            muteBtn.innerText = '🔇';
+            isMuted = true;
+            if (emu.mute) emu.mute();
+        } else {
+            if (isMuted) {
+                isMuted = false;
+                if (emu.unmute) emu.unmute();
+            }
+            muteBtn.innerText = '🔊';
+        }
+    };
+
+    window.simClick = function(el, iframeWin) {
+        if(!el) return false;
+        
+        const fireEvent = (type, constructorName) => {
+            try {
+                let ev;
+                if (constructorName === 'MouseEvent') {
+                    ev = new MouseEvent(type, { bubbles: true, cancelable: true, view: iframeWin });
+                } else if (constructorName === 'TouchEvent' && typeof TouchEvent !== 'undefined') {
+                    ev = new TouchEvent(type, { bubbles: true, cancelable: true });
+                } else {
+                    ev = new Event(type, { bubbles: true, cancelable: true });
+                }
+                el.dispatchEvent(ev);
+            } catch (e) {}
+        };
+
+        fireEvent('touchstart', 'TouchEvent');
+        fireEvent('touchend', 'TouchEvent');
+        fireEvent('mousedown', 'MouseEvent');
+        fireEvent('mouseup', 'MouseEvent');
+        fireEvent('click', 'MouseEvent');
+        
+        try { el.click(); } catch (e) {}
+        return true;
+    };
+
+    window.clickIframeMenu = function(textToFind) {
+        const iframe = document.querySelector('#game-container iframe');
+        if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
+            const doc = iframe.contentWindow.document;
+            const win = iframe.contentWindow;
+            const elements = doc.querySelectorAll('*:not(style):not(script)');
+            for (const el of elements) {
+                if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3 && el.textContent.trim() === textToFind) {
+                    const parentBtn = el.closest('div[role="button"], button, li') || el.parentElement;
+                    if (parentBtn) {
+                        return window.simClick(parentBtn, win);
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+    window.restartGameAction = function() {
+        if (confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso no guardado.")) {
+            if (!window.clickIframeMenu('Reiniciar')) {
+                const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
+                if (emu && emu.gameManager && emu.gameManager.restart) emu.gameManager.restart();
+            }
+            closeOptionsMenu();
+        }
+    };
+
+    window.openControlsMenu = function() {
+        const iframe = document.querySelector('#game-container iframe');
+        if (!iframe || !iframe.contentWindow || !iframe.contentWindow.document) return;
+        const doc = iframe.contentWindow.document;
+        const win = iframe.contentWindow;
+        
+        // 1. Buscamos directamente el botón nativo de controles de la barra
+        let controlBtn = doc.getElementById('control-btn') || doc.querySelector('[title*="Control"]') || doc.querySelector('[title*="Mando"]');
+        if (controlBtn) {
+            window.simClick(controlBtn, win);
+            closeOptionsMenu();
+            return;
+        }
+
+        // 2. Si no existe acceso directo, abrimos el menú principal de EmulatorJS
+        let menuBtn = doc.getElementById('menu-btn') || doc.querySelector('.menu-button') || doc.querySelector('[title="Menu"]');
+        if (menuBtn) {
+            window.simClick(menuBtn, win);
+            
+            setTimeout(() => {
+                let found = false;
+                const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+                let node;
+                
+                while ((node = walker.nextNode())) {
+                    const text = node.nodeValue.trim().toLowerCase();
+                    if (text.includes('control') || text.includes('mando') || text.includes('gamepad')) {
+                        const parentBtn = node.parentElement.closest('div[role="button"], button, li, .item') || node.parentElement;
+                        window.simClick(parentBtn, win);
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    alert("Abre el menú del emulador (franja negra) y pulsa en 'Controles'.");
+                }
+            }, 500);
+        } else {
+            alert("Abre el menú del emulador pulsando en la franja negra inferior.");
+        }
+        closeOptionsMenu();
+    };
     </script>
 </body>
 </html>
