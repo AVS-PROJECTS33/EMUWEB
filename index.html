@@ -195,7 +195,7 @@
 
         <div id="tab-local" class="console-section">
             <div class="console-title" style="color:#ff9800;">Carga Manual</div>
-            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.nes,.nds,.n64,.v64,.z64" multiple style="display: none;" onchange="loadLocalRoms(event)">
+            <input type="file" id="rom-upload" accept=".smc,.sfc,.md,.gen,.bin,.gb,.gbc,.gba,.iso,.cue,.chd,.pbp,.img,.nes,.nds,.n64,.v64,.z64" multiple style="display: none;" onchange="loadLocalRoms(event)">
             <button class="game-btn" onclick="openLocalRoms()" style="background: #ff9800; text-align: center; font-weight: bold; border-color: #ff9800;">📁 Seleccionar ROMs de tu PC/Móvil</button>
             <div id="local-roms-list"></div>
         </div>
@@ -237,7 +237,7 @@
                 <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
             </div>
             
-            <button onclick="closeOptionsMenu()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px;">Cerrar Menú</button>
+            <button onclick="closeOptionsMenu()" style="background: #555555; color: white; border: 1px solid #777; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px;">Cerrar Menú</button>
         </div>
     </div>
 
@@ -285,6 +285,7 @@
             // Configuraciones añadidas
             window.EJS_startOnLoaded = true; // Iniciar automáticamente sin pantalla previa
             window.EJS_language = "es"; // Idioma en español
+            window.EJS_gameName = window.AVS_GAME_ID; // Para que el emulador reconozca el nombre interno
 
             // Desactivamos el botón de cámara rápida y utilidades de UI que ensucian la pantalla táctil
             window.EJS_Buttons = { fastForward: false };
@@ -509,13 +510,13 @@
                 let core = ''; let containerId = '';
 
                 if (nameLower.endsWith('.smc') || nameLower.endsWith('.sfc')) { core = 'snes'; containerId = 'snes-auto-list'; }
-                else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen')) { core = 'sega'; containerId = 'md-auto-list'; }
+                else if (nameLower.endsWith('.md') || nameLower.endsWith('.gen')) { core = 'segaMD'; containerId = 'md-auto-list'; }
                 else if (nameLower.endsWith('.bin')) {
                     if (nameLower.includes('ps1') || nameLower.includes('psx') || nameLower.includes('playstation')) { core = 'psx'; containerId = 'psx-auto-list'; }
-                    else { core = 'sega'; containerId = 'md-auto-list'; }
+                    else { core = 'segaMD'; containerId = 'md-auto-list'; }
                 }
                 else if (nameLower.endsWith('.gb') || nameLower.endsWith('.gbc') || nameLower.endsWith('.gba')) { core = 'gba'; containerId = 'gba-auto-list'; }
-                else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp')) { core = 'psx'; containerId = 'psx-auto-list'; }
+                else if (nameLower.endsWith('.iso') || nameLower.endsWith('.cue') || nameLower.endsWith('.chd') || nameLower.endsWith('.pbp') || nameLower.endsWith('.img')) { core = 'psx'; containerId = 'psx-auto-list'; }
                 else if (nameLower.endsWith('.nes')) { core = 'nes'; containerId = 'nes-auto-list'; }
                 else if (nameLower.endsWith('.nds')) { core = 'nds'; containerId = 'ds-auto-list'; }
                 else if (nameLower.endsWith('.n64') || nameLower.endsWith('.v64') || nameLower.endsWith('.z64')) { core = 'n64'; containerId = 'n64-auto-list'; }
@@ -563,7 +564,7 @@
                         types: [{
                             description: 'ROMs de Juegos',
                             accept: {
-                                'application/octet-stream': ['.smc','.sfc','.md','.gen','.bin','.gb','.gbc','.gba','.iso','.cue','.chd','.pbp','.nes','.nds','.n64','.v64','.z64']
+                                'application/octet-stream': ['.smc','.sfc','.md','.gen','.bin','.gb','.gbc','.gba','.iso','.cue','.chd','.pbp','.img','.nes','.nds','.n64','.v64','.z64']
                             }
                         }]
                     });
@@ -598,13 +599,13 @@
                 
                 let core = '';
                 if (name.endsWith('.smc') || name.endsWith('.sfc')) core = 'snes'; // Corregido para que sea 'snes'
-                else if (name.endsWith('.md') || name.endsWith('.gen')) core = 'sega';
+                else if (name.endsWith('.md') || name.endsWith('.gen')) core = 'segaMD';
                 else if (name.endsWith('.bin')) {
                     // Si el archivo pesa más de 15MB, es casi seguro un CD de PS1. Si es menos, es cartucho de Mega Drive.
-                    if (file.size > 15 * 1024 * 1024) core = 'psx'; else core = 'sega';
+                    if (file.size > 15 * 1024 * 1024) core = 'psx'; else core = 'segaMD';
                 }
                 else if (name.endsWith('.gb') || name.endsWith('.gbc') || name.endsWith('.gba')) core = 'gba';
-                else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp')) core = 'psx';
+                else if (name.endsWith('.iso') || name.endsWith('.cue') || name.endsWith('.chd') || name.endsWith('.pbp') || name.endsWith('.img')) core = 'psx';
                 else if (name.endsWith('.nes')) core = 'nes';
                 else if (name.endsWith('.nds')) core = 'nds';
                 else if (name.endsWith('.n64') || name.endsWith('.v64') || name.endsWith('.z64')) core = 'n64';
@@ -614,8 +615,12 @@
                     btn.className = 'game-btn';
                     btn.style.backgroundColor = '#e65100'; // Naranja distinto para diferenciarlos
                     btn.innerText = '🕹️ ' + file.name;
-                    // Usamos file.name como identificador estable, de lo contrario createObjectURL cambia en cada carga y borraría el guardado
-                    btn.onclick = () => startGame(core, URL.createObjectURL(file), file.name);
+                    
+                    // Truco vital: Añadir el nombre del archivo al final del blob con un hash #/
+                    // EmulatorJS necesita leer la extensión (.pbp, .iso) del string de la URL para saber cómo descomprimir y montar el juego.
+                    const safeUrl = URL.createObjectURL(file) + '#/' + encodeURIComponent(file.name);
+                    
+                    btn.onclick = () => startGame(core, safeUrl, file.name);
                     listContainer.appendChild(btn);
                 }
             }
@@ -854,6 +859,7 @@
 
     window.clickIframeMenu = function(textToFind) {
         const iframe = document.querySelector('#game-container iframe');
+        let emuWin = null;
         if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
             const doc = iframe.contentWindow.document;
             const win = iframe.contentWindow;
@@ -872,9 +878,23 @@
 
     window.restartGameAction = function() {
         if (confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso no guardado.")) {
-            if (!window.clickIframeMenu('Reiniciar')) {
-                const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
-                if (emu && emu.gameManager && emu.gameManager.restart) emu.gameManager.restart();
+            const iframe = document.querySelector('#game-container iframe');
+            const emuWin = iframe ? iframe.contentWindow : null;
+            
+            if (emuWin && emuWin.EJS_emulator) {
+                try {
+                    if (emuWin.EJS_emulator.gameManager && typeof emuWin.EJS_emulator.gameManager.restart === 'function') {
+                        emuWin.EJS_emulator.gameManager.restart();
+                    } else if (typeof emuWin.EJS_emulator.restart === 'function') {
+                        emuWin.EJS_emulator.restart();
+                    } else {
+                        window.location.reload();
+                    }
+                } catch(e) {
+                    window.location.reload();
+                }
+            } else {
+                window.location.reload();
             }
             closeOptionsMenu();
         }
@@ -884,11 +904,13 @@
     window.toggleTouchControls = function() {
         let doc = document;
         const iframe = document.querySelector('#game-container iframe');
+        let emuWin = null;
         
         if (iframe) {
             try {
                 if (iframe.contentWindow && iframe.contentWindow.document) {
                     doc = iframe.contentWindow.document;
+                    emuWin = iframe.contentWindow;
                 }
             } catch (e) {
                 console.warn("No se pudo acceder al documento del iframe:", e);
@@ -910,12 +932,22 @@
             style.id = 'avs-touch-toggle';
             doc.head.appendChild(style);
         }
+
+        // Etiquetar proactivamente los botones táctiles generados por EmulatorJS
+        const allDivs = doc.querySelectorAll('div');
+        allDivs.forEach(el => {
+            // Los botones táctiles suelen usar position: absolute y touch-action: none
+            if (el.style.touchAction === 'none' && el.style.position === 'absolute' && !el.id.includes('menu')) {
+                el.classList.add('avs-touch-control-element');
+            }
+        });
         
         if (isTouchVisible) {
             style.innerHTML = '';
         } else {
             // Inyectamos CSS agresivo para ocultar los botones táctiles del emulador
             style.innerHTML = `
+                .avs-touch-control-element,
                 div[style*="touch-action: none"], 
                 div[style*="touch-action:none"], 
                 .virtual-gamepad, 
@@ -926,8 +958,16 @@
                     display: none !important;
                     opacity: 0 !important;
                     pointer-events: none !important;
+                    visibility: hidden !important;
                 }
             `;
+            
+            // Simular el cambio de estado interno de EmulatorJS si es posible
+            if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
+                try {
+                    emuWin.EJS_emulator.settings.virtualGamepad = false;
+                } catch(e) {}
+            }
         }
 
         const btn = document.getElementById('btn-touch-toggle');
