@@ -221,7 +221,7 @@
                 <button class="game-btn" onclick="closeOptionsMenu(); openSlotMenu('load')" style="background: #2e7d32; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">📂 Cargar</button>
             </div>
             
-            <button class="game-btn" id="btn-touch-toggle" onclick="toggleTouchControls()" style="background: #607d8b; text-align: center; margin-bottom: 0; padding: 12px; font-size: 14px; width: 100%;">📱 Ocultar Mando Táctil</button>
+            <button class="game-btn" id="btn-touch-toggle" onclick="toggleTouchControls()" style="background: #388e3c; text-align: center; margin-bottom: 0; padding: 12px; font-size: 14px; width: 100%;">📱 Mostrar Mando Táctil</button>
 
             <div style="height: 1px; background: #444; margin: 4px 0;"></div>
             
@@ -900,7 +900,7 @@
         }
     };
 
-    let isTouchVisible = true;
+    let isTouchVisible = false;
     window.toggleTouchControls = function() {
         let doc = document;
         const iframe = document.querySelector('#game-container iframe');
@@ -943,6 +943,15 @@
         });
         
         if (isTouchVisible) {
+            // Intentar encender el mando virtual de EmulatorJS nativamente
+            if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
+                try {
+                    emuWin.EJS_emulator.settings.virtualGamepad = true;
+                    if (emuWin.EJS_emulator.ui && typeof emuWin.EJS_emulator.ui.updateVirtualGamepad === 'function') {
+                        emuWin.EJS_emulator.ui.updateVirtualGamepad();
+                    }
+                } catch(e) {}
+            }
             style.innerHTML = '';
         } else {
             // Inyectamos CSS agresivo para ocultar los botones táctiles del emulador
