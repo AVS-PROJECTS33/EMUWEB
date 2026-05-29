@@ -174,13 +174,7 @@
         </div>
 
         <div id="tab-psx" class="console-section">
-            <div class="console-title" style="color:#e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-                <span>PlayStation 1 (PSX)</span>
-                <select id="psx-core-select" style="background: #2a2a2a; color: #fff; border: 1px solid #555; padding: 4px 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: none; letter-spacing: normal; outline: none;">
-                    <option value="psx">⚙️ Beetle PSX</option>
-                    <option value="swanstation">⚙️ SwanStation</option>
-                </select>
-            </div>
+            <div class="console-title" style="color:#e0e0e0;">PlayStation 1 (PSX)</div>
             <div id="psx-auto-list"></div>
         </div>
 
@@ -238,7 +232,10 @@
 
             <div style="height: 1px; background: #444; margin: 4px 0;"></div>
             
-            <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="game-btn" onclick="restartGameAction()" style="background: #e65100; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">🔄 Reiniciar juego</button>
+                <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
+            </div>
             
             <button onclick="closeOptionsMenu()" style="background: #555555; color: white; border: 1px solid #777; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px;">Cerrar Menú</button>
         </div>
@@ -282,24 +279,9 @@
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
 
-            // Comprobar si es un juego de PS1 para aplicar el motor seleccionado en la pestaña
-            if (core === 'psx') {
-                const psxCoreSelect = document.getElementById('psx-core-select');
-                if (psxCoreSelect) {
-                    core = psxCoreSelect.value;
-                }
-            }
-
             // Identificador seguro para el sistema de guardado
             window.AVS_GAME_ID = gameId || romUrl.split('/').pop() || 'unknown_game';
             
-            // TRUCO: Forzar a EmulatorJS a generar el mando táctil internamente siempre en segundo plano
-            try {
-                let ejsSettings = JSON.parse(localStorage.getItem('emulatorjs_settings') || '{}');
-                ejsSettings.virtualGamepad = true;
-                localStorage.setItem('emulatorjs_settings', JSON.stringify(ejsSettings));
-            } catch(e) {}
-
             // Configuraciones añadidas
             window.EJS_startOnLoaded = true; // Iniciar automáticamente sin pantalla previa
             window.EJS_language = "es"; // Idioma en español
@@ -360,30 +342,6 @@
                                 }
                             `;
                             doc.head.appendChild(style);
-                        }
-
-                        // Asegurar el estado inicial del mando táctil (oculto si isTouchVisible es false)
-                        if (!doc.getElementById('avs-touch-toggle')) {
-                            const touchStyle = doc.createElement('style');
-                            touchStyle.id = 'avs-touch-toggle';
-                            if (!isTouchVisible) {
-                                touchStyle.innerHTML = `
-                                    .avs-touch-control-element,
-                                    div[style*="touch-action: none"], 
-                                    div[style*="touch-action:none"], 
-                                    .virtual-gamepad, 
-                                    #virtual-gamepad, 
-                                    .touch-controls, 
-                                    #touch-controls,
-                                    .emu-gamepad {
-                                        display: none !important;
-                                        opacity: 0 !important;
-                                        pointer-events: none !important;
-                                        visibility: hidden !important;
-                                    }
-                                `;
-                            }
-                            doc.head.appendChild(touchStyle);
                         }
 
                         // 3. Traducir menú y arreglar el botón de salida
@@ -776,35 +734,6 @@
         document.getElementById('slot-menu-overlay').style.display = 'none';
     };
 
-    window.showToast = function(msg) {
-        let toast = document.getElementById('avs-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'avs-toast';
-            toast.style.position = 'fixed';
-            toast.style.bottom = '30px';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.background = 'rgba(0,0,0,0.8)';
-            toast.style.color = '#fff';
-            toast.style.padding = '10px 20px';
-            toast.style.borderRadius = '20px';
-            toast.style.zIndex = '10000';
-            toast.style.fontSize = '14px';
-            toast.style.fontWeight = 'bold';
-            toast.style.pointerEvents = 'none';
-            toast.style.transition = 'opacity 0.3s';
-            document.body.appendChild(toast);
-        }
-        toast.innerText = msg;
-        toast.style.opacity = '1';
-        
-        if (toast.timeout) clearTimeout(toast.timeout);
-        toast.timeout = setTimeout(() => {
-            toast.style.opacity = '0';
-        }, 2500);
-    };
-
     async function handleSlotClick(action, gameId, slot) {
         const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
         
@@ -820,8 +749,8 @@
             try {
                 const stateData = await emu.gameManager.getState(); // Llama a la API interna del emulador
                 await saveStateToSlot(gameId, slot, stateData, customName); // Guarda silenciosamente en el navegador
+                alert(`✅ Partida guardada correctamente en: ${customName || `Slot ${slot}`}`);
                 closeSlotMenu();
-                showToast(`✅ Partida guardada en: ${customName || `Slot ${slot}`}`);
             } catch (e) {
                 console.error("Error guardando state:", e);
                 alert("❌ Ocurrió un error al intentar guardar la partida.");
@@ -833,11 +762,9 @@
                     alert("⚠️ Este slot está vacío. No hay nada que cargar.");
                     return;
                 }
-                // Aseguramos que sea un Uint8Array. IndexedDB a veces devuelve un ArrayBuffer, lo que crashea el motor C++
-                const stateData = new Uint8Array(record.data);
-                await emu.gameManager.loadState(stateData); // Llama a la API interna del emulador
+                await emu.gameManager.loadState(record.data); // Llama a la API interna del emulador
+                alert(`✅ Partida cargada desde el Slot ${slot}`);
                 closeSlotMenu();
-                showToast(`✅ Partida cargada desde el Slot ${slot}`);
             } catch (e) {
                 console.error("Error cargando state:", e);
                 alert("❌ Ocurrió un error al intentar cargar la partida.");
@@ -949,6 +876,30 @@
         return false;
     };
 
+    window.restartGameAction = function() {
+        if (confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso no guardado.")) {
+            const iframe = document.querySelector('#game-container iframe');
+            const emuWin = iframe ? iframe.contentWindow : null;
+            
+            if (emuWin && emuWin.EJS_emulator) {
+                try {
+                    if (emuWin.EJS_emulator.gameManager && typeof emuWin.EJS_emulator.gameManager.restart === 'function') {
+                        emuWin.EJS_emulator.gameManager.restart();
+                    } else if (typeof emuWin.EJS_emulator.restart === 'function') {
+                        emuWin.EJS_emulator.restart();
+                    } else {
+                        window.location.reload();
+                    }
+                } catch(e) {
+                    window.location.reload();
+                }
+            } else {
+                window.location.reload();
+            }
+            closeOptionsMenu();
+        }
+    };
+
     let isTouchVisible = false;
     window.toggleTouchControls = function() {
         let doc = document;
@@ -992,14 +943,18 @@
         });
         
         if (isTouchVisible) {
+            // Intentar encender el mando virtual de EmulatorJS nativamente
             if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
                 try {
                     emuWin.EJS_emulator.settings.virtualGamepad = true;
-                    if(typeof emuWin.EJS_emulator.saveSettings === 'function') emuWin.EJS_emulator.saveSettings();
+                    if (emuWin.EJS_emulator.ui && typeof emuWin.EJS_emulator.ui.updateVirtualGamepad === 'function') {
+                        emuWin.EJS_emulator.ui.updateVirtualGamepad();
+                    }
                 } catch(e) {}
             }
             style.innerHTML = '';
         } else {
+            // Inyectamos CSS agresivo para ocultar los botones táctiles del emulador
             style.innerHTML = `
                 .avs-touch-control-element,
                 div[style*="touch-action: none"], 
@@ -1015,6 +970,13 @@
                     visibility: hidden !important;
                 }
             `;
+            
+            // Simular el cambio de estado interno de EmulatorJS si es posible
+            if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
+                try {
+                    emuWin.EJS_emulator.settings.virtualGamepad = false;
+                } catch(e) {}
+            }
         }
 
         const btn = document.getElementById('btn-touch-toggle');
