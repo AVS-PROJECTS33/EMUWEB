@@ -232,10 +232,7 @@
 
             <div style="height: 1px; background: #444; margin: 4px 0;"></div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button class="game-btn" onclick="restartGameAction()" style="background: #e65100; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">🔄 Reiniciar juego</button>
-                <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
-            </div>
+            <button class="game-btn" onclick="confirmExit()" style="background: #d32f2f; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">❌ Salir juego</button>
             
             <button onclick="closeOptionsMenu()" style="background: #555555; color: white; border: 1px solid #777; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px;">Cerrar Menú</button>
         </div>
@@ -282,6 +279,13 @@
             // Identificador seguro para el sistema de guardado
             window.AVS_GAME_ID = gameId || romUrl.split('/').pop() || 'unknown_game';
             
+            // TRUCO: Forzar a EmulatorJS a generar el mando táctil internamente siempre en segundo plano
+            try {
+                let ejsSettings = JSON.parse(localStorage.getItem('emulatorjs_settings') || '{}');
+                ejsSettings.virtualGamepad = true;
+                localStorage.setItem('emulatorjs_settings', JSON.stringify(ejsSettings));
+            } catch(e) {}
+
             // Configuraciones añadidas
             window.EJS_startOnLoaded = true; // Iniciar automáticamente sin pantalla previa
             window.EJS_language = "es"; // Idioma en español
@@ -342,6 +346,30 @@
                                 }
                             `;
                             doc.head.appendChild(style);
+                        }
+
+                        // Asegurar el estado inicial del mando táctil (oculto si isTouchVisible es false)
+                        if (!doc.getElementById('avs-touch-toggle')) {
+                            const touchStyle = doc.createElement('style');
+                            touchStyle.id = 'avs-touch-toggle';
+                            if (!isTouchVisible) {
+                                touchStyle.innerHTML = `
+                                    .avs-touch-control-element,
+                                    div[style*="touch-action: none"], 
+                                    div[style*="touch-action:none"], 
+                                    .virtual-gamepad, 
+                                    #virtual-gamepad, 
+                                    .touch-controls, 
+                                    #touch-controls,
+                                    .emu-gamepad {
+                                        display: none !important;
+                                        opacity: 0 !important;
+                                        pointer-events: none !important;
+                                        visibility: hidden !important;
+                                    }
+                                `;
+                            }
+                            doc.head.appendChild(touchStyle);
                         }
 
                         // 3. Traducir menú y arreglar el botón de salida
@@ -749,8 +777,9 @@
             try {
                 const stateData = await emu.gameManager.getState(); // Llama a la API interna del emulador
                 await saveStateToSlot(gameId, slot, stateData, customName); // Guarda silenciosamente en el navegador
-                alert(`✅ Partida guardada correctamente en: ${customName || `Slot ${slot}`}`);
                 closeSlotMenu();
+                // Retrasamos el alert para que no bloquee el hilo principal y no congele el emulador
+                setTimeout(() => alert(`✅ Partida guardada correctamente en: ${customName || `Slot ${slot}`}`), 100);
             } catch (e) {
                 console.error("Error guardando state:", e);
                 alert("❌ Ocurrió un error al intentar guardar la partida.");
@@ -762,9 +791,11 @@
                     alert("⚠️ Este slot está vacío. No hay nada que cargar.");
                     return;
                 }
-                await emu.gameManager.loadState(record.data); // Llama a la API interna del emulador
-                alert(`✅ Partida cargada desde el Slot ${slot}`);
+                // Aseguramos que sea un Uint8Array. IndexedDB a veces devuelve un ArrayBuffer, lo que crashea el motor C++
+                const stateData = new Uint8Array(record.data);
+                await emu.gameManager.loadState(stateData); // Llama a la API interna del emulador
                 closeSlotMenu();
+                setTimeout(() => alert(`✅ Partida cargada desde el Slot ${slot}`), 100);
             } catch (e) {
                 console.error("Error cargando state:", e);
                 alert("❌ Ocurrió un error al intentar cargar la partida.");
@@ -876,30 +907,6 @@
         return false;
     };
 
-    window.restartGameAction = function() {
-        if (confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso no guardado.")) {
-            const iframe = document.querySelector('#game-container iframe');
-            const emuWin = iframe ? iframe.contentWindow : null;
-            
-            if (emuWin && emuWin.EJS_emulator) {
-                try {
-                    if (emuWin.EJS_emulator.gameManager && typeof emuWin.EJS_emulator.gameManager.restart === 'function') {
-                        emuWin.EJS_emulator.gameManager.restart();
-                    } else if (typeof emuWin.EJS_emulator.restart === 'function') {
-                        emuWin.EJS_emulator.restart();
-                    } else {
-                        window.location.reload();
-                    }
-                } catch(e) {
-                    window.location.reload();
-                }
-            } else {
-                window.location.reload();
-            }
-            closeOptionsMenu();
-        }
-    };
-
     let isTouchVisible = false;
     window.toggleTouchControls = function() {
         let doc = document;
@@ -943,18 +950,14 @@
         });
         
         if (isTouchVisible) {
-            // Intentar encender el mando virtual de EmulatorJS nativamente
             if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
                 try {
                     emuWin.EJS_emulator.settings.virtualGamepad = true;
-                    if (emuWin.EJS_emulator.ui && typeof emuWin.EJS_emulator.ui.updateVirtualGamepad === 'function') {
-                        emuWin.EJS_emulator.ui.updateVirtualGamepad();
-                    }
+                    if(typeof emuWin.EJS_emulator.saveSettings === 'function') emuWin.EJS_emulator.saveSettings();
                 } catch(e) {}
             }
             style.innerHTML = '';
         } else {
-            // Inyectamos CSS agresivo para ocultar los botones táctiles del emulador
             style.innerHTML = `
                 .avs-touch-control-element,
                 div[style*="touch-action: none"], 
@@ -970,13 +973,6 @@
                     visibility: hidden !important;
                 }
             `;
-            
-            // Simular el cambio de estado interno de EmulatorJS si es posible
-            if (emuWin && emuWin.EJS_emulator && emuWin.EJS_emulator.settings) {
-                try {
-                    emuWin.EJS_emulator.settings.virtualGamepad = false;
-                } catch(e) {}
-            }
         }
 
         const btn = document.getElementById('btn-touch-toggle');
