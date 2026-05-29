@@ -221,7 +221,7 @@
                 <button class="game-btn" onclick="closeOptionsMenu(); openSlotMenu('load')" style="background: #2e7d32; text-align: center; margin-bottom: 0; padding: 12px 5px; font-size: 13px;">📂 Cargar</button>
             </div>
             
-            <button class="game-btn" onclick="openControlsMenu()" style="background: #607d8b; text-align: center; margin-bottom: 0; padding: 12px; font-size: 14px; width: 100%;">🎮 Ajustar Controles / Mando</button>
+            <button class="game-btn" id="btn-touch-toggle" onclick="toggleTouchControls()" style="background: #607d8b; text-align: center; margin-bottom: 0; padding: 12px; font-size: 14px; width: 100%;">📱 Ocultar Mando Táctil</button>
 
             <div style="height: 1px; background: #444; margin: 4px 0;"></div>
             
@@ -787,39 +787,35 @@
     let isMuted = false;
     window.toggleMute = function() {
         const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
-        if (!emu) return;
+        if (!emu || typeof emu.setVolume !== 'function') return;
 
         isMuted = !isMuted;
         const muteBtn = document.getElementById('mute-btn');
+        const volSlider = document.getElementById('volume-slider');
         
         if (isMuted) {
             muteBtn.innerText = '🔇';
-            if (emu.mute) emu.mute();
+            emu.setVolume(0);
         } else {
             muteBtn.innerText = '🔊';
-            if (emu.unmute) emu.unmute();
-            
-            const vol = document.getElementById('volume-slider').value;
-            if (emu.setVolume) emu.setVolume(parseFloat(vol));
+            emu.setVolume(parseFloat(volSlider.value) || 1);
         }
     };
 
     window.changeVolume = function(val) {
         const emu = window.EJS_emulator || (document.querySelector('#game-container iframe')?.contentWindow?.EJS_emulator);
-        if (!emu) return;
+        if (!emu || typeof emu.setVolume !== 'function') return;
         
         const volume = parseFloat(val);
-        if (emu.setVolume) emu.setVolume(volume);
+        emu.setVolume(volume);
         
         const muteBtn = document.getElementById('mute-btn');
         if (volume === 0) {
             muteBtn.innerText = '🔇';
             isMuted = true;
-            if (emu.mute) emu.mute();
         } else {
             if (isMuted) {
                 isMuted = false;
-                if (emu.unmute) emu.unmute();
             }
             muteBtn.innerText = '🔊';
         }
@@ -833,6 +829,8 @@
                 let ev;
                 if (constructorName === 'MouseEvent') {
                     ev = new MouseEvent(type, { bubbles: true, cancelable: true, view: iframeWin });
+                } else if (constructorName === 'PointerEvent' && typeof PointerEvent !== 'undefined') {
+                    ev = new PointerEvent(type, { bubbles: true, cancelable: true, view: iframeWin });
                 } else if (constructorName === 'TouchEvent' && typeof TouchEvent !== 'undefined') {
                     ev = new TouchEvent(type, { bubbles: true, cancelable: true });
                 } else {
@@ -842,7 +840,9 @@
             } catch (e) {}
         };
 
+        fireEvent('pointerdown', 'PointerEvent');
         fireEvent('touchstart', 'TouchEvent');
+        fireEvent('pointerup', 'PointerEvent');
         fireEvent('touchend', 'TouchEvent');
         fireEvent('mousedown', 'MouseEvent');
         fireEvent('mouseup', 'MouseEvent');
@@ -880,46 +880,60 @@
         }
     };
 
-    window.openControlsMenu = function() {
+    let isTouchVisible = true;
+    window.toggleTouchControls = function() {
+        let doc = document;
         const iframe = document.querySelector('#game-container iframe');
-        if (!iframe || !iframe.contentWindow || !iframe.contentWindow.document) return;
-        const doc = iframe.contentWindow.document;
-        const win = iframe.contentWindow;
         
-        // 1. Buscamos directamente el botón nativo de controles de la barra
-        let controlBtn = doc.getElementById('control-btn') || doc.querySelector('[title*="Control"]') || doc.querySelector('[title*="Mando"]');
-        if (controlBtn) {
-            window.simClick(controlBtn, win);
-            closeOptionsMenu();
-            return;
+        if (iframe) {
+            try {
+                if (iframe.contentWindow && iframe.contentWindow.document) {
+                    doc = iframe.contentWindow.document;
+                }
+            } catch (e) {
+                console.warn("No se pudo acceder al documento del iframe:", e);
+            }
+        } else {
+            // Si no hay iframe, verificamos si el contenedor del juego tiene contenido
+            const container = document.getElementById('game-container');
+            if (!container || container.innerHTML.trim() === '') {
+                alert("El juego no está cargado todavía.");
+                return;
+            }
+        }
+        
+        isTouchVisible = !isTouchVisible;
+        
+        let style = doc.getElementById('avs-touch-toggle');
+        if (!style) {
+            style = doc.createElement('style');
+            style.id = 'avs-touch-toggle';
+            doc.head.appendChild(style);
+        }
+        
+        if (isTouchVisible) {
+            style.innerHTML = '';
+        } else {
+            // Inyectamos CSS agresivo para ocultar los botones táctiles del emulador
+            style.innerHTML = `
+                div[style*="touch-action: none"], 
+                div[style*="touch-action:none"], 
+                .virtual-gamepad, 
+                #virtual-gamepad, 
+                .touch-controls, 
+                #touch-controls,
+                .emu-gamepad {
+                    display: none !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                }
+            `;
         }
 
-        // 2. Si no existe acceso directo, abrimos el menú principal de EmulatorJS
-        let menuBtn = doc.getElementById('menu-btn') || doc.querySelector('.menu-button') || doc.querySelector('[title="Menu"]');
-        if (menuBtn) {
-            window.simClick(menuBtn, win);
-            
-            setTimeout(() => {
-                let found = false;
-                const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
-                let node;
-                
-                while ((node = walker.nextNode())) {
-                    const text = node.nodeValue.trim().toLowerCase();
-                    if (text.includes('control') || text.includes('mando') || text.includes('gamepad')) {
-                        const parentBtn = node.parentElement.closest('div[role="button"], button, li, .item') || node.parentElement;
-                        window.simClick(parentBtn, win);
-                        found = true;
-                        break;
-                    }
-                }
-                
-                if (!found) {
-                    alert("Abre el menú del emulador (franja negra) y pulsa en 'Controles'.");
-                }
-            }, 500);
-        } else {
-            alert("Abre el menú del emulador pulsando en la franja negra inferior.");
+        const btn = document.getElementById('btn-touch-toggle');
+        if (btn) {
+            btn.innerHTML = isTouchVisible ? '📱 Ocultar Mando Táctil' : '📱 Mostrar Mando Táctil';
+            btn.style.background = isTouchVisible ? '#607d8b' : '#388e3c';
         }
         closeOptionsMenu();
     };
